@@ -474,7 +474,7 @@ const Sound = (() => {
 //  CANVAS BOARD RENDERER
 // ════════════════════════════════════════════════════════
 const Board = (() => {
-  const W = 760, H = 580;
+  const W = 800, H = 620;
   let canvas, ctx, dpr;
   let hoverLoc = -1;
   let reachable = new Set();
@@ -482,32 +482,33 @@ const Board = (() => {
   let animPlayers = []; // {x,y,color,label,moving,path,progress}
 
   // Location pixel positions on canvas (ring layout)
+  // Buildings are 72×80px, centered at these coords
   const POS = [
-    {x:105, y:62},   // 0 employment   — top-left
-    {x:290, y:62},   // 1 university
-    {x:475, y:62},   // 2 tradeschool
-    {x:660, y:62},   // 3 grocery      — top-right
-    {x:720, y:160},  // 4 clothing     — right side upper
-    {x:720, y:330},  // 5 bank         — right side lower
-    {x:720, y:470},  // 6 rentoffice   — bottom-right corner
-    {x:580, y:530},  // 7 grindpad
-    {x:395, y:530},  // 8 urbanheights
-    {x:210, y:530},  // 9 fastfood     — bottom
-    {x:70,  y:430},  // 10 park        — left lower
-    {x:70,  y:230},  // 11 lucky       — left upper
+    {x:110, y:78},   // 0 employment   — top-left
+    {x:295, y:78},   // 1 university
+    {x:480, y:78},   // 2 tradeschool
+    {x:665, y:78},   // 3 grocery      — top-right
+    {x:738, y:190},  // 4 clothing     — right upper
+    {x:738, y:340},  // 5 bank         — right mid
+    {x:738, y:490},  // 6 rentoffice   — right lower
+    {x:600, y:548},  // 7 grindpad     — bottom-right
+    {x:420, y:548},  // 8 urbanheights — bottom-mid
+    {x:240, y:548},  // 9 fastfood     — bottom-left
+    {x:72,  y:470},  // 10 park        — left lower
+    {x:72,  y:240},  // 11 lucky       — left upper
   ];
 
   // Ring path points (road polyline for rendering)
   const RING_PATH = [
-    {x:50,  y:62},
+    {x:50,  y:78},
     ...POS.slice(0,4),
-    {x:740, y:62},
+    {x:760, y:78},
     ...POS.slice(4,7),
-    {x:740, y:540},
+    {x:760, y:570},
     ...POS.slice(7,10),
-    {x:50,  y:540},
+    {x:50,  y:570},
     ...POS.slice(10),
-    {x:50,  y:62},
+    {x:50,  y:78},
   ];
 
   function init() {
@@ -526,10 +527,10 @@ const Board = (() => {
   }
 
   function locAt(mx, my) {
+    // Buildings are 72×80, centered at POS[i]
     for (let i = 0; i < LOCS.length; i++) {
       const p = POS[i];
-      const dx = mx - p.x, dy = my - p.y;
-      if (dx*dx + dy*dy < 38*38) return i;
+      if (mx >= p.x - 36 && mx <= p.x + 36 && my >= p.y - 40 && my <= p.y + 40) return i;
     }
     return -1;
   }
@@ -600,24 +601,41 @@ const Board = (() => {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // City center park decoration
+    // City center decoration
+    const cx = W/2, cy = H/2 + 10;
     ctx.save();
-    ctx.globalAlpha = .15;
+    ctx.globalAlpha = .12;
     ctx.fillStyle = '#224422';
-    ctx.beginPath(); ctx.arc(W/2-30, H/2-10, 120, 0, Math.PI*2); ctx.fill();
-    ctx.globalAlpha = .08;
+    ctx.beginPath(); ctx.arc(cx, cy, 140, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .07;
     ctx.fillStyle = '#336633';
-    ctx.beginPath(); ctx.arc(W/2-30, H/2-10, 160, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, 200, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .05;
+    ctx.fillStyle = '#003333';
+    ctx.beginPath(); ctx.arc(cx, cy, 240, 0, Math.PI*2); ctx.fill();
     ctx.restore();
 
-    // Draw decorative center text
+    // Center grid lines (city block pattern)
     ctx.save();
-    ctx.globalAlpha = .08;
-    ctx.font = 'bold 48px system-ui';
+    ctx.globalAlpha = .04;
+    ctx.strokeStyle = '#446644';
+    ctx.lineWidth = 1;
+    for (let gx = 150; gx < W - 100; gx += 60) {
+      ctx.beginPath(); ctx.moveTo(gx, 120); ctx.lineTo(gx, H - 90); ctx.stroke();
+    }
+    for (let gy = 130; gy < H - 80; gy += 60) {
+      ctx.beginPath(); ctx.moveTo(130, gy); ctx.lineTo(W - 110, gy); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Decorative city center emoji
+    ctx.save();
+    ctx.globalAlpha = .06;
+    ctx.font = '80px system-ui';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🏙️', W/2 - 30, H/2 - 10);
+    ctx.fillText('🏙️', cx, cy);
     ctx.restore();
 
     // Road outline (shadow)
@@ -689,65 +707,127 @@ const Board = (() => {
     const isHover = (hoverLoc === i);
     const isReach = moveMode && reachable.has(i);
 
-    const R = 36;
+    const BW = 72, BH = 80; // building width/height
+    const bx = p.x - BW/2, by = p.y - BH/2;
+    const R = 8; // corner radius
 
-    // Shadow
-    ctx.save();
-    ctx.globalAlpha = .4;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(p.x + 3, p.y + 4, R, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    // Glow if reachable
+    // Outer glow / reach indicator
     if (isReach) {
       ctx.save();
-      ctx.globalAlpha = .5;
       ctx.shadowColor = '#44ff66';
-      ctx.shadowBlur = 20;
+      ctx.shadowBlur = 24;
+      ctx.globalAlpha = .7;
+      roundRect(p.x - BW/2 - 4, p.y - BH/2 - 4, BW + 8, BH + 8, R + 2);
       ctx.fillStyle = '#44ff66';
-      ctx.beginPath(); ctx.arc(p.x, p.y, R+4, 0, Math.PI*2); ctx.fill();
+      ctx.fill();
       ctx.restore();
     }
 
-    // Background circle
-    const grad = ctx.createRadialGradient(p.x-6, p.y-6, 2, p.x, p.y, R);
-    grad.addColorStop(0, lighten(loc.color, .4));
-    grad.addColorStop(1, darken(loc.color, .5));
+    // Drop shadow
+    ctx.save();
+    ctx.globalAlpha = .4;
+    ctx.fillStyle = '#000';
+    roundRect(bx + 4, by + 5, BW, BH, R);
+    ctx.fill();
+    ctx.restore();
+
+    // Building gradient background
+    const grad = ctx.createLinearGradient(bx, by, bx, by + BH);
+    grad.addColorStop(0, lighten(loc.color, .25));
+    grad.addColorStop(.4, loc.color);
+    grad.addColorStop(1, darken(loc.color, .55));
     ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI*2); ctx.fill();
+    roundRect(bx, by, BW, BH, R);
+    ctx.fill();
+
+    // Roof accent (top stripe with rounded top corners only)
+    const roofGrad = ctx.createLinearGradient(bx, by, bx, by + 18);
+    roofGrad.addColorStop(0, lighten(loc.color, .5));
+    roofGrad.addColorStop(1, lighten(loc.color, .2));
+    ctx.fillStyle = roofGrad;
+    ctx.beginPath();
+    ctx.moveTo(bx + R, by);
+    ctx.lineTo(bx + BW - R, by);
+    ctx.arcTo(bx + BW, by, bx + BW, by + R, R);
+    ctx.lineTo(bx + BW, by + 18);
+    ctx.lineTo(bx, by + 18);
+    ctx.lineTo(bx, by + R);
+    ctx.arcTo(bx, by, bx + R, by, R);
+    ctx.closePath();
+    ctx.fill();
+
+    // Window details
+    ctx.fillStyle = 'rgba(255,255,200,0.25)';
+    for (let wx = 0; wx < 3; wx++) {
+      for (let wy = 0; wy < 2; wy++) {
+        ctx.fillRect(bx + 8 + wx * 20, by + 26 + wy * 16, 10, 8);
+      }
+    }
 
     // Border
-    ctx.strokeStyle = isHover ? '#ffffff' : isReach ? '#44ff88' : lighten(loc.color, .3);
-    ctx.lineWidth = isHover ? 3 : 2;
-    ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = isHover ? '#ffffff' : isReach ? '#44ff88' : lighten(loc.color, .4);
+    ctx.lineWidth = isHover ? 3 : 1.5;
+    roundRect(bx, by, BW, BH, R);
+    ctx.stroke();
 
     // Emoji icon
-    ctx.font = '22px system-ui';
+    ctx.font = isHover ? '28px system-ui' : '24px system-ui';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(loc.emoji, p.x, p.y - 4);
+    ctx.fillText(loc.emoji, p.x, p.y + 6);
 
-    // Label below
-    ctx.font = `bold ${isHover ? 12 : 10}px system-ui`;
-    ctx.fillStyle = isHover ? '#ffffff' : '#ccccdd';
-    ctx.textBaseline = 'top';
-    const label = loc.name.length > 12 ? loc.name.substring(0, 11) + '…' : loc.name;
-    ctx.fillText(label, p.x, p.y + R + 4);
+    // Location name on roof strip
+    ctx.font = `bold 9px system-ui`;
+    ctx.fillStyle = isHover ? '#fff' : 'rgba(255,255,255,0.9)';
+    ctx.textBaseline = 'middle';
+    const label = loc.name.length > 11 ? loc.name.substring(0, 10) + '…' : loc.name;
+    ctx.fillText(label, p.x, by + 9);
 
-    // Hours indicator if in move mode
+    // Hours badge if in move mode
     if (moveMode && Game.state) {
       const cp = Game.currentPlayer();
       if (cp) {
         const h = ringDist(cp.pos, i);
         if (h > 0) {
-          ctx.font = '10px system-ui';
-          ctx.fillStyle = isReach ? '#44ff88' : '#666677';
-          ctx.fillText(`${h}h`, p.x, p.y - R - 14);
+          const badgeX = p.x + BW/2 - 14, badgeY = by - 10;
+          ctx.fillStyle = isReach ? '#44ff66' : '#333344';
+          ctx.beginPath(); ctx.arc(badgeX, badgeY, 11, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = isReach ? '#fff' : '#555';
+          ctx.lineWidth = 1; ctx.stroke();
+          ctx.font = 'bold 9px system-ui';
+          ctx.fillStyle = isReach ? '#000' : '#888';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${h}h`, badgeX, badgeY);
         }
       }
     }
+
+    // Active player location indicator (pulsing dot)
+    if (Game.state) {
+      const cp = Game.currentPlayer();
+      if (cp && cp.pos === i) {
+        const pulse = (Math.sin(Date.now() * .004) + 1) / 2;
+        ctx.save();
+        ctx.globalAlpha = .4 + pulse * .4;
+        ctx.fillStyle = cp.color;
+        ctx.beginPath(); ctx.arc(p.x + BW/2 - 8, by + BH - 10, 5, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
   }
 
   function drawPlayerToken(x, y, color, label) {
@@ -1055,8 +1135,6 @@ const Game = (() => {
     p.hours -= hours;
     p.pos = locIdx;
 
-    // Animate movement step-by-step
-    const dir = ringDir(p.pos > locIdx ? locIdx : p.pos, p.pos > locIdx ? p.pos : locIdx);
     Board.animatePlayerTo(p.id, locIdx, () => {
       Sound.arrive();
       refreshHours();
@@ -1147,6 +1225,28 @@ const Game = (() => {
     infoText(`${JOBS[p.job].emoji} ${JOBS[p.job].name} — $${JOBS[p.job].income}/week`, body);
     infoText(`EXP: ${p.exp}/100  DEP: ${p.dep}/100  EDU: ${p.edu}`, body);
 
+    // Work shift — available to all employed players anywhere
+    if (p.job > 0) {
+      const canWork = p.hours >= HOURS_WORK;
+      sectionLabel('Work a Shift', body);
+      locBtn(`${JOBS[p.job].emoji} Work (EXP +2, DEP +2)`, 0, `${HOURS_WORK}h`, canWork, () => {
+        p.hours -= HOURS_WORK;
+        p.exp = Math.min(100, p.exp + 2);
+        p.dep = Math.min(100, p.dep + 2);
+        Sound.work();
+        setLog(`Worked as ${JOBS[p.job].name}. EXP:${p.exp} DEP:${p.dep}`);
+      }, body);
+      // Grind extra shifts (repeat)
+      const canWork2 = p.hours >= HOURS_WORK * 2;
+      locBtn(`💪 Pull a double shift (EXP +4, DEP +4)`, 0, `${HOURS_WORK*2}h`, canWork2, () => {
+        p.hours -= HOURS_WORK * 2;
+        p.exp = Math.min(100, p.exp + 4);
+        p.dep = Math.min(100, p.dep + 4);
+        Sound.work();
+        setLog(`Pulled a double shift! EXP:${p.exp} DEP:${p.dep}`);
+      }, body);
+    }
+
     sectionLabel('Available Jobs', body);
     for (let i = 1; i < JOBS.length; i++) {
       const j = JOBS[i];
@@ -1158,6 +1258,7 @@ const Game = (() => {
         p.job = i;
         setLog(`Got job as ${j.name}!`);
         notify(`New job: ${j.emoji} ${j.name}!`);
+        body.innerHTML = '';
         buildEmployment(p, body);
       }, body);
       if (isCurrent) btn.style.borderColor = '#4488ff';
@@ -1405,8 +1506,6 @@ const Game = (() => {
         p.rentDue = 4;
         setLog(`Moved to ${h.name}!`);
         notify(`Moved in to ${h.name}!`);
-        p.pos = LOCS.findIndex(l=>l.id===(hLevel===1?'grindpad':'urbanheights'));
-        Board.snapPlayerTo(p.id, p.pos);
       }, body);
     } else {
       infoText('✅ You live here!', body);
@@ -1421,22 +1520,31 @@ const Game = (() => {
   function buildPark(p, body) {
     sectionLabel('City Park', body);
     infoText(`😊 Current happiness: ${p.happiness}%`, body);
+    infoText(`DEP: ${p.dep}/100 (Park activities help maintain dependability)`, body);
 
-    locBtn('🌿 Relax (3h) — boost happiness', 0, `${HOURS_REST}h`, p.hours >= HOURS_REST, () => {
+    locBtn('🌿 Relax & Picnic (3h) — DEP +5', 0, `${HOURS_REST}h`, p.hours >= HOURS_REST, () => {
       p.hours -= HOURS_REST;
-      // happiness is derived, but we can give temporary bonus via hidden stat
-      p.exp += 1; // small bonus
-      setLog('Relaxed in the park. Feel great!');
-      notify('😊 Happiness up!');
+      p.dep = Math.min(100, p.dep + 5);
+      setLog('Relaxed in the park. Feeling refreshed! DEP +5');
+      notify('😊 Park time! DEP +5');
     }, body);
 
-    locBtn('🏃 Jog (2h) — exercise boost', 0, '2h', p.hours >= 2, () => {
+    locBtn('🏃 Morning Jog (2h) — DEP +3, EXP +1', 0, '2h', p.hours >= 2, () => {
       p.hours -= 2;
       p.dep = Math.min(100, p.dep + 3);
-      setLog('Went for a jog! DEP +3');
+      p.exp = Math.min(100, p.exp + 1);
+      setLog('Went for a jog! DEP +3, EXP +1');
+      notify('🏃 Good jog!');
     }, body);
 
-    infoText('The park boosts your happiness and dependability.', body);
+    locBtn('📚 Read in the Park (2h) — EXP +2', 0, '2h', p.hours >= 2, () => {
+      p.hours -= 2;
+      p.exp = Math.min(100, p.exp + 2);
+      setLog('Spent time reading. EXP +2');
+      notify('📚 Brain gains!');
+    }, body);
+
+    infoText('Park activities help maintain Dependability and Experience.', body);
   }
 
   function buildLucky(p, body) {
@@ -1479,9 +1587,19 @@ const Game = (() => {
     const p = currentPlayer();
     if (!p) return;
 
-    // Any work sessions available? (only if at work-relevant locations, handled in location UI)
-    // Process week end
     const events = p.processEndOfWeek();
+
+    // Weekend random event (30% chance)
+    if (Math.random() < .3) {
+      const ev = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+      const result = ev.fn(p);
+      events.push({type: ev.id === 'mugger' || ev.id === 'car_trouble' || ev.id === 'market_crash' || ev.id === 'sickday' ? 'neg' : 'pos',
+        text: `🎉 Weekend: ${ev.emoji} ${ev.title} — ${result}`});
+    }
+
+    // Economy headline
+    const ecoTrend = S.economyIndex > 5 ? '📈 Economy is hot!' : '📉 Economy is slow.';
+    events.push({type:'neu', text: ecoTrend});
 
     // Stock price fluctuations
     updateStockPrices();
