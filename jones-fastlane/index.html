@@ -262,7 +262,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     </div>
   </div>
   <div id="sidePanel">
-    <div id="sidePanelTop">CITY HUSTLE</div>
+    <div id="sidePanelTop" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>CITY HUSTLE</span>
+      <button class="btn btn-gray btn-sm" onclick="if(confirm('Quit to title screen?')){UI.showTitle();}" style="font-size:11px;padding:4px 8px;letter-spacing:0;">✕ Quit</button>
+    </div>
     <div id="playerCards"></div>
     <div id="actionBar">
       <div id="actionButtons">
@@ -428,7 +431,11 @@ const RANDOM_EVENTS = [
   {id:'sickday',     emoji:'🤒', title:'Sick Day',            desc:'Illness costs you hours next turn.',       fn:p=>{p.sickPenalty=4;return '-4h next week';}},
   {id:'lottery',     emoji:'🎰', title:'Lottery Winner!',     desc:'You win the city lottery!',               fn:p=>{p.cash+=500;return '+$500 lottery';}},
   {id:'promotion',   emoji:'⬆️', title:'Promotion Offer!',   desc:'Your experience gets noticed!',            fn:p=>{p.exp=Math.min(p.exp+15,100);p.dep=Math.min(p.dep+10,100);return '+15 EXP +10 DEP';}},
-  {id:'market_crash',emoji:'📉', title:'Market Crash!',       desc:'Stock values plummet.',                   fn:p=>{for(const k in p.stocks)p.stocks[k]=Math.floor(p.stocks[k]*.4);return 'stocks -60%';}},
+  {id:'market_crash',emoji:'📉', title:'Market Crash!',       desc:'Stocks plummet — even other players are hit!', fn:p=>{
+    const g = typeof Game !== 'undefined' ? Game.state : null;
+    if (g) { for (const s of STOCKS_DEF) { if(!s.safe) g.stockPrices[s.id]=Math.max(5,Math.floor(g.stockPrices[s.id]*.3)); } }
+    return 'All volatile stocks -70%!';
+  }},
   {id:'payraise',    emoji:'💎', title:'Pay Raise!',          desc:'Your boss gives you a raise this week.',  fn:p=>{p.cash+=JOBS[p.job].income*.5|0;return `+$${JOBS[p.job].income*.5|0} extra pay`;}},
 ];
 
@@ -675,6 +682,8 @@ const Board = (() => {
     }
 
     // Player tokens (with animation interpolation)
+    // Offset tokens at same location so they don't fully overlap
+    const posCount = {};
     for (const ap of animPlayers) {
       const speed = 6;
       const dx = ap.targetX - ap.x, dy = ap.targetY - ap.y;
@@ -689,7 +698,14 @@ const Board = (() => {
           if (ap._onDone) { ap._onDone(); ap._onDone = null; }
         }
       }
-      drawPlayerToken(ap.x, ap.y, ap.color, ap.label);
+      const key = `${Math.round(ap.x)},${Math.round(ap.y)}`;
+      const slot = posCount[key] || 0;
+      posCount[key] = slot + 1;
+      // Offset tokens in a small arc so they're all visible
+      const offsetAngles = [0, -Math.PI/4, Math.PI/4, Math.PI/2];
+      const angle = offsetAngles[slot] || 0;
+      const offR = slot > 0 ? 16 : 0;
+      drawPlayerToken(ap.x + Math.cos(angle)*offR, ap.y + Math.sin(angle)*offR, ap.color, ap.label);
     }
   }
 
@@ -1765,6 +1781,28 @@ const Game = (() => {
         Sound.win();
         setTimeout(() => UI.showWin(p), 500);
         return;
+      }
+    }
+    // Milestone notifications for active human player
+    const p = currentPlayer();
+    if (p && p.isHuman) {
+      for (const type of ['wealth','happiness','education','career']) {
+        const pct = p.goalPct(type);
+        const key = `_milestone_${type}`;
+        const prev = p[key] || 0;
+        if (pct >= 100 && prev < 100) {
+          p[key] = 100;
+          Sound.notify();
+          notify(`${GOAL_DEFS[type].emoji} ${GOAL_DEFS[type].name} goal COMPLETE! 🎉`);
+        } else if (pct >= 75 && prev < 75) {
+          p[key] = 75;
+          notify(`${GOAL_DEFS[type].emoji} ${GOAL_DEFS[type].name}: 75% — almost there!`);
+        } else if (pct >= 50 && prev < 50) {
+          p[key] = 50;
+          notify(`${GOAL_DEFS[type].emoji} ${GOAL_DEFS[type].name}: Halfway there!`);
+        } else if (pct > prev) {
+          p[key] = pct;
+        }
       }
     }
   }
