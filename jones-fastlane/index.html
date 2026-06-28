@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>City Hustle — Life in the Fast Lane</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0e0e1a;--bg2:#1a1a2e;--panel:#12121f;--border:#2a2a4a;
+  --accent:#ff6b6b;--accent2:#6b9fff;--accent3:#6bff6b;--accent4:#ffdd6b;
+  --text:#e0e0f0;--muted:#666680;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;width:100vw;user-select:none;}
+.screen{display:none;position:fixed;inset:0;}
+.screen.active{display:flex;}
+
+/* ═══════ TITLE SCREEN ═══════ */
+#titleScreen{background:radial-gradient(ellipse at 30% 20%,#1a0044 0%,#0e0e1a 60%);
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.title-art{font-size:72px;line-height:1;animation:float 3s ease-in-out infinite;text-shadow:0 0 40px #ff6b6b88;}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+.title-game{font-size:52px;font-weight:900;letter-spacing:4px;text-transform:uppercase;
+  background:linear-gradient(135deg,#ff6b6b,#ffdd6b,#6bff6b,#6b9fff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;animation:titleShine 4s linear infinite;}
+@keyframes titleShine{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+.title-sub{color:var(--muted);font-size:16px;letter-spacing:6px;text-transform:uppercase;}
+.title-buttons{display:flex;gap:16px;margin-top:24px;}
+.title-credits{position:absolute;bottom:20px;color:#333355;font-size:12px;}
+
+/* ═══════ BUTTONS ═══════ */
+.btn{border:none;font-family:inherit;font-weight:700;cursor:pointer;text-transform:uppercase;
+  letter-spacing:2px;border-radius:6px;transition:all .12s;position:relative;overflow:hidden;}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:.12s;}
+.btn:hover::after{background:rgba(255,255,255,.12);}
+.btn:active{transform:scale(.96);}
+.btn-xl{padding:16px 40px;font-size:18px;}
+.btn-lg{padding:12px 28px;font-size:15px;}
+.btn-md{padding:9px 20px;font-size:13px;}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.btn-red{background:#cc2233;color:#fff;box-shadow:0 4px 0 #881122;}
+.btn-red:active{box-shadow:0 1px 0 #881122;top:3px;}
+.btn-blue{background:#2244cc;color:#fff;box-shadow:0 4px 0 #112288;}
+.btn-blue:active{box-shadow:0 1px 0 #112288;top:3px;}
+.btn-green{background:#228844;color:#fff;box-shadow:0 4px 0 #115522;}
+.btn-green:active{box-shadow:0 1px 0 #115522;top:3px;}
+.btn-orange{background:#cc6611;color:#fff;box-shadow:0 4px 0 #883300;}
+.btn-orange:active{box-shadow:0 1px 0 #883300;top:3px;}
+.btn-purple{background:#6633cc;color:#fff;box-shadow:0 4px 0 #441188;}
+.btn-purple:active{box-shadow:0 1px 0 #441188;top:3px;}
+.btn-gray{background:#334;color:#aaa;box-shadow:0 4px 0 #111;}
+.btn-gray:active{box-shadow:0 1px 0 #111;top:3px;}
+.btn-gold{background:#cc8800;color:#fff;box-shadow:0 4px 0 #885500;}
+.btn-gold:active{box-shadow:0 1px 0 #885500;top:3px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;}
+
+/* ═══════ SETUP SCREEN ═══════ */
+#setupScreen{background:var(--bg2);flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+.setup-card{background:var(--panel);border:2px solid var(--border);border-radius:12px;padding:28px;width:540px;}
+.setup-title{font-size:26px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.setup-row{display:flex;align-items:center;gap:12px;margin:10px 0;padding:10px;background:#111122;border-radius:8px;}
+.setup-label{color:var(--muted);min-width:80px;font-size:14px;}
+.setup-row input[type=text]{background:#1e1e35;border:1px solid var(--border);color:var(--text);
+  padding:8px 12px;font-size:14px;border-radius:6px;flex:1;font-family:inherit;}
+.setup-row input[type=text]:focus{outline:none;border-color:var(--accent2);}
+.setup-row select{background:#1e1e35;border:1px solid var(--border);color:var(--text);
+  padding:8px 12px;font-size:14px;border-radius:6px;font-family:inherit;cursor:pointer;}
+.char-dot{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.3);flex-shrink:0;}
+.difficulty-row{display:flex;gap:8px;flex-wrap:wrap;}
+.diff-btn{padding:6px 14px;border-radius:20px;border:2px solid var(--border);background:transparent;
+  color:var(--muted);cursor:pointer;font-family:inherit;font-size:13px;transition:.15s;}
+.diff-btn.selected{border-color:var(--accent2);color:var(--text);background:#1a2a4a;}
+
+/* ═══════ GOAL REVEAL ═══════ */
+#goalReveal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;
+  align-items:center;justify-content:center;}
+#goalReveal.visible{display:flex;}
+.goal-box{background:var(--panel);border:3px solid var(--accent);border-radius:16px;padding:32px;
+  width:500px;text-align:center;}
+.goal-box-title{font-size:24px;font-weight:700;margin-bottom:6px;}
+.goal-box-player{font-size:15px;color:var(--muted);margin-bottom:24px;}
+.goal-cards{display:flex;gap:16px;justify-content:center;margin-bottom:20px;}
+.goal-card{background:#1a1a35;border:2px solid #3344aa;border-radius:10px;padding:20px;flex:1;min-width:100px;}
+.goal-card-icon{font-size:36px;margin-bottom:8px;}
+.goal-card-name{font-size:13px;font-weight:700;color:var(--text);}
+.goal-card-desc{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* ═══════ GAME SCREEN ═══════ */
+#gameScreen{background:var(--bg);flex-direction:row;align-items:stretch;}
+#boardWrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative;}
+#boardCanvas{display:block;cursor:pointer;}
+
+/* HUD overlay on canvas */
+#hud{position:absolute;top:10px;left:10px;right:260px;pointer-events:none;z-index:10;}
+#hudWeek{font-size:13px;color:var(--muted);font-weight:600;background:rgba(10,10,20,.7);
+  padding:4px 10px;border-radius:6px;display:inline-block;}
+#hudMsg{display:inline-block;margin-left:12px;font-size:13px;color:var(--accent4);
+  background:rgba(10,10,20,.7);padding:4px 10px;border-radius:6px;}
+
+/* Right side panel */
+#sidePanel{width:250px;background:var(--panel);border-left:2px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;}
+#sidePanelTop{padding:10px;border-bottom:1px solid var(--border);font-size:12px;
+  font-weight:700;color:var(--accent4);text-align:center;letter-spacing:2px;}
+#playerCards{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;}
+.pcard{background:#111122;border:2px solid var(--border);border-radius:8px;padding:10px;cursor:default;}
+.pcard.active-player{border-color:var(--accent4);box-shadow:0 0 12px rgba(255,221,107,.2);}
+.pcard-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pcard-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.pcard-name{font-weight:700;font-size:14px;flex:1;}
+.pcard-type{font-size:10px;color:var(--muted);}
+.pcard-stats{font-size:11px;display:flex;flex-direction:column;gap:3px;}
+.pcard-stat{display:flex;justify-content:space-between;color:var(--muted);}
+.pcard-stat span:last-child{color:var(--text);font-weight:600;}
+.pcard-bar{height:4px;background:#222;border-radius:2px;margin-top:1px;overflow:hidden;}
+.pcard-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+.pcard-goals{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);
+  font-size:10px;display:flex;flex-direction:column;gap:3px;}
+.pcard-goal{display:flex;align-items:center;gap:6px;color:var(--muted);}
+.pcard-goal.done{color:#44ee66;}
+.pcard-goal-pct{font-weight:700;min-width:35px;text-align:right;}
+.goal-check{font-size:12px;}
+.pcard-hours{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;}
+.hours-pip{width:8px;height:8px;border-radius:2px;background:#2244cc;transition:.2s;}
+.hours-pip.used{background:#1a1a35;}
+
+/* Bottom actions */
+#actionBar{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+#actionButtons{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ═══════ MODALS ═══════ */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;
+  align-items:center;justify-content:center;}
+.modal-bg.visible{display:flex;}
+.modal{background:var(--panel);border-radius:14px;padding:28px;min-width:340px;max-width:520px;
+  box-shadow:0 0 60px rgba(0,0,100,.4);}
+.modal-icon{font-size:48px;margin-bottom:12px;display:block;}
+.modal-title{font-size:22px;font-weight:700;margin-bottom:6px;}
+.modal-desc{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.6;}
+.modal-body{display:flex;flex-direction:column;gap:10px;}
+.loc-btn{background:#1a1a30;border:2px solid var(--border);color:var(--text);border-radius:8px;
+  padding:12px 16px;cursor:pointer;text-align:left;font-family:inherit;font-size:13px;
+  transition:.12s;display:flex;justify-content:space-between;align-items:center;}
+.loc-btn:hover:not(:disabled){background:#222245;border-color:#5566aa;}
+.loc-btn:disabled{opacity:.4;cursor:not-allowed;}
+.loc-btn-cost{color:var(--muted);font-size:12px;white-space:nowrap;margin-left:8px;}
+.loc-btn-cost.can-afford{color:#ffdd6b;}
+.loc-btn-cost.cant-afford{color:#ff4444;}
+.modal-footer{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);
+  letter-spacing:2px;margin:12px 0 6px;}
+.stock-row{display:flex;align-items:center;gap:10px;padding:8px;background:#111122;border-radius:6px;margin:4px 0;}
+.stock-name{flex:1;font-size:13px;}
+.stock-price{color:var(--accent4);font-weight:700;min-width:50px;text-align:right;}
+.stock-change{font-size:11px;min-width:40px;text-align:right;}
+.stock-change.up{color:#44ee66;}
+.stock-change.down{color:#ff4444;}
+.stock-owned{color:var(--muted);font-size:11px;min-width:30px;}
+.stock-actions{display:flex;gap:4px;}
+
+/* ═══════ WEEK SUMMARY ═══════ */
+#weekSummary{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:150;
+  align-items:center;justify-content:center;}
+#weekSummary.visible{display:flex;}
+.week-box{background:var(--panel);border:3px solid #5544aa;border-radius:14px;padding:28px;
+  min-width:380px;max-width:500px;}
+.week-title{font-size:22px;font-weight:700;color:var(--accent4);margin-bottom:6px;}
+.week-sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+.week-events{font-size:13px;line-height:2.2;border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:16px;}
+.ev-pos{color:#44ee66;}
+.ev-neg{color:#ff4444;}
+.ev-warn{color:#ffdd6b;}
+.ev-neu{color:var(--muted);}
+
+/* ═══════ WIN SCREEN ═══════ */
+#winScreen{background:radial-gradient(ellipse at 50% 40%,#1a0a2e,#0e0e1a);
+  flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;}
+.win-trophies{font-size:80px;animation:winBounce 1s ease-in-out infinite alternate;}
+@keyframes winBounce{0%{transform:scale(1) rotate(-5deg)}100%{transform:scale(1.15) rotate(5deg)}}
+.win-headline{font-size:60px;font-weight:900;text-transform:uppercase;
+  background:linear-gradient(135deg,#ffdd6b,#ff6b6b,#6bff6b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.win-name{font-size:28px;color:var(--accent4);}
+.win-goals{font-size:15px;color:var(--muted);max-width:500px;line-height:1.8;}
+.win-buttons{display:flex;gap:16px;margin-top:24px;}
+
+/* ═══════ NOTIFICATION ═══════ */
+#notification{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--panel);border:2px solid var(--accent2);border-radius:10px;padding:12px 24px;
+  font-size:14px;font-weight:600;z-index:500;transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;pointer-events:none;}
+#notification.show{transform:translateX(-50%) translateY(0);}
+
+/* ═══════ SCROLLBARS ═══════ */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#334;border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════ TITLE SCREEN ═══════ -->
+<div id="titleScreen" class="screen active">
+  <div class="title-art">🏙️</div>
+  <div class="title-game">City Hustle</div>
+  <div class="title-sub">Life in the Fast Lane</div>
+  <div class="title-buttons">
+    <button class="btn btn-red btn-xl" onclick="UI.showSetup()">🎮 New Game</button>
+    <button class="btn btn-gray btn-xl" onclick="UI.showHelp()">📖 How to Play</button>
+  </div>
+  <div class="title-credits">Inspired by Jones in the Fast Lane (Sierra On-Line, 1990)</div>
+</div>
+
+<!-- ═══════ SETUP SCREEN ═══════ -->
+<div id="setupScreen" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:20px;background:var(--bg2);">
+  <div class="setup-card">
+    <div class="setup-title">🏙️ City Setup</div>
+    <div class="setup-row">
+      <span class="setup-label">Players</span>
+      <select id="numPlayersSelect" onchange="UI.updateSetupRows()">
+        <option value="1">1 Human + Jones (CPU)</option>
+        <option value="2">2 Humans + Jones (CPU)</option>
+        <option value="3">3 Humans</option>
+      </select>
+    </div>
+    <div id="playerSetupRows"></div>
+    <div class="setup-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <span class="setup-label" style="min-width:auto;">Difficulty (Jones's goals):</span>
+      <div class="difficulty-row" id="difficultyRow">
+        <button class="diff-btn" data-diff="easy" onclick="UI.selectDiff(this)">😊 Easy</button>
+        <button class="diff-btn selected" data-diff="normal" onclick="UI.selectDiff(this)">😤 Normal</button>
+        <button class="diff-btn" data-diff="hard" onclick="UI.selectDiff(this)">💀 Hard</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px;">
+      <button class="btn btn-green btn-lg" onclick="Game.startGame()">▶ Start Game</button>
+      <button class="btn btn-gray btn-md" onclick="UI.showTitle()">◀ Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ GOAL REVEAL ═══════ -->
+<div id="goalReveal">
+  <div class="goal-box">
+    <div class="goal-box-title">🎯 Your Life Goals</div>
+    <div class="goal-box-player" id="goalRevealPlayer"></div>
+    <div class="goal-cards" id="goalRevealCards"></div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:20px;">Complete ALL goals to win the game!</div>
+    <button class="btn btn-blue btn-md" onclick="UI.nextGoalReveal()">Got it! ▶</button>
+  </div>
+</div>
+
+<!-- ═══════ GAME SCREEN ═══════ -->
+<div id="gameScreen" class="screen">
+  <div id="boardWrap">
+    <canvas id="boardCanvas"></canvas>
+    <div id="hud">
+      <span id="hudWeek">Week 1</span>
+      <span id="hudMsg">Welcome to City Hustle!</span>
+    </div>
+  </div>
+  <div id="sidePanel">
+    <div id="sidePanelTop">CITY HUSTLE</div>
+    <div id="playerCards"></div>
+    <div id="actionBar">
+      <div id="actionButtons">
+        <button class="btn btn-blue btn-sm" id="btnMove" onclick="Game.startMoveMode()">🚶 Move</button>
+        <button class="btn btn-green btn-sm" id="btnAction" onclick="Game.doLocationAction()" disabled>🏢 Action</button>
+        <button class="btn btn-orange btn-sm" id="btnEndWeek" onclick="Game.endWeek()">⏭ End Week</button>
+      </div>
+      <div id="logLines" style="font-size:11px;color:var(--muted);max-height:80px;overflow-y:auto;
+        border-top:1px solid var(--border);padding-top:6px;display:flex;flex-direction:column;gap:2px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ LOCATION INTERACTION MODAL ═══════ -->
+<div class="modal-bg" id="locModal">
+  <div class="modal" id="locModalInner">
+    <span class="modal-icon" id="locModalIcon"></span>
+    <div class="modal-title" id="locModalTitle"></div>
+    <div class="modal-desc" id="locModalDesc"></div>
+    <div class="modal-body" id="locModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-gray btn-md" onclick="Game.closeModal()">Leave →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ WEEK SUMMARY ═══════ -->
+<div id="weekSummary">
+  <div class="week-box">
+    <div class="week-title" id="weekSummaryTitle">📅 Week Ended</div>
+    <div class="week-sub" id="weekSummaryPlayer"></div>
+    <div class="week-events" id="weekSummaryEvents"></div>
+    <button class="btn btn-blue btn-md" onclick="Game.continueAfterWeek()">Continue ▶</button>
+  </div>
+</div>
+
+<!-- ═══════ WIN SCREEN ═══════ -->
+<div id="winScreen" class="screen">
+  <div class="win-trophies">🏆</div>
+  <div class="win-headline">Winner!</div>
+  <div class="win-name" id="winName"></div>
+  <div class="win-goals" id="winGoals"></div>
+  <div class="win-buttons">
+    <button class="btn btn-green btn-xl" onclick="UI.showSetup()">🔄 Play Again</button>
+    <button class="btn btn-gray btn-lg" onclick="UI.showTitle()">🏠 Title</button>
+  </div>
+</div>
+
+<!-- ═══════ NOTIFICATION TOAST ═══════ -->
+<div id="notification"></div>
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════
+//  CONSTANTS & DATA
+// ════════════════════════════════════════════════════════
+
+const HOURS_PER_WEEK = 24;
+const HOURS_PER_MOVE = 2;   // cost to travel one location step
+const HOURS_WORK     = 4;
+const HOURS_STUDY    = 4;
+const HOURS_REST     = 3;
+const HOURS_SHOP     = 1;
+
+// Colors for the 4 players
+const PLAYER_COLORS = ['#ff5566','#4488ff','#44dd88','#ffcc22'];
+const PLAYER_EMOJIS = ['🧑','👱','🧓','👩'];
+const PLAYER_NAMES  = ['Alex','Casey','Morgan','Drew'];
+
+// ── LOCATIONS (12, arranged around a ring) ──────────────
+const LOCS = [
+  {id:'employment', name:'FastLane Agency',  emoji:'💼', color:'#4466ff', desc:'Find jobs, apply for promotions',            ring:0},
+  {id:'university', name:'Pixel University', emoji:'🎓', color:'#ff9900', desc:'Study for degrees (4h per course)',           ring:1},
+  {id:'tradeschool',name:'Trade School',     emoji:'🔧', color:'#ff6644', desc:'Vocational courses — faster & cheaper',       ring:2},
+  {id:'grocery',    name:'Fresh Mart',       emoji:'🛒', color:'#44cc44', desc:'Buy groceries (1–4 week supply)',             ring:3},
+  {id:'clothing',   name:'Style Squad',      emoji:'👗', color:'#ff44cc', desc:'Buy new clothes (required every 8 weeks)',    ring:4},
+  {id:'bank',       name:'Pixel Bank',       emoji:'🏦', color:'#8888ff', desc:'Deposit cash, take loans, trade stocks',     ring:5},
+  {id:'rentoffice', name:'City Rentals',     emoji:'🔑', color:'#aaaaaa', desc:'Change your housing situation',              ring:6},
+  {id:'grindpad',   name:'The Grind Pad',    emoji:'🏚️', color:'#888866', desc:'Cheap housing — beware of Sly Steve!',      ring:7},
+  {id:'urbanheights',name:'Urban Heights',   emoji:'🏢', color:'#99ccff', desc:'Upscale apartments. Safe & stylish.',        ring:8},
+  {id:'fastfood',   name:'Burger Bonanza',   emoji:'🍔', color:'#ff8800', desc:'Quick cheap food. Entry-level jobs here.',   ring:9},
+  {id:'park',       name:'City Park',        emoji:'🌳', color:'#55cc55', desc:'Rest & relax — boosts happiness',            ring:10},
+  {id:'lucky',      name:'Lucky Corner',     emoji:'🎲', color:'#aa44ff', desc:'Random events — could be good or bad!',      ring:11},
+];
+
+// Ring distance: adjacent locations = 2 hours
+function ringDist(a, b) {
+  const n = LOCS.length;
+  const cw = ((b - a) + n) % n;
+  const cc = n - cw;
+  return Math.min(cw, cc) * HOURS_PER_MOVE;
+}
+function ringDir(from, to) {
+  const n = LOCS.length;
+  const cw = ((to - from) + n) % n;
+  const cc = n - cw;
+  return cw <= cc ? 1 : -1;
+}
+
+// ── JOBS ────────────────────────────────────────────────
+const JOBS = [
+  {id:0, name:'Unemployed',        income:0,    expReq:0,  depReq:0,  educReq:0, emoji:'❌'},
+  {id:1, name:'Burger Flipper',    income:320,  expReq:0,  depReq:0,  educReq:0, emoji:'🍟', locId:'fastfood'},
+  {id:2, name:'Janitor',           income:480,  expReq:10, depReq:15, educReq:0, emoji:'🧹'},
+  {id:3, name:'Office Clerk',      income:680,  expReq:20, depReq:20, educReq:1, emoji:'📋'},
+  {id:4, name:'Tech Support',      income:960,  expReq:30, depReq:30, educReq:2, emoji:'💻'},
+  {id:5, name:'Project Manager',   income:1400, expReq:45, depReq:40, educReq:3, emoji:'📊'},
+  {id:6, name:'Senior Developer',  income:2000, expReq:60, depReq:55, educReq:4, emoji:'⚙️'},
+  {id:7, name:'VP of Everything',  income:2800, expReq:80, depReq:65, educReq:4, emoji:'🎩'},
+  {id:8, name:'CEO / Founder',     income:4000, expReq:100,depReq:80, educReq:5, emoji:'👑'},
+];
+
+// ── HOUSING ─────────────────────────────────────────────
+const HOUSING = [
+  {id:0, name:'Homeless',      rent:0,   happBonus:0,  locId:null,         safe:false},
+  {id:1, name:'Grind Pad',     rent:200, happBonus:5,  locId:'grindpad',   safe:false},
+  {id:2, name:'Urban Heights', rent:380, happBonus:20, locId:'urbanheights',safe:true},
+];
+
+// ── EDUCATION COURSES ────────────────────────────────────
+const COURSES = [
+  {id:0, name:'Business Basics',  cost:400,  time:HOURS_STUDY, eduGain:1, loc:'university'},
+  {id:1, name:'Computer Science', cost:600,  time:HOURS_STUDY, eduGain:1, loc:'university'},
+  {id:2, name:'Management 101',   cost:800,  time:HOURS_STUDY, eduGain:1, loc:'university'},
+  {id:3, name:'Advanced Degree',  cost:1200, time:HOURS_STUDY, eduGain:1, loc:'university'},
+  {id:4, name:'Masters Program',  cost:2000, time:HOURS_STUDY, eduGain:1, loc:'university'},
+  {id:5, name:'Vocational Course',cost:200,  time:2,           eduGain:1, loc:'tradeschool'},
+];
+
+// ── STOCKS ──────────────────────────────────────────────
+const STOCKS_DEF = [
+  {id:'tbill', name:'T-Bills',    basePrice:100, volatility:.05, safe:true},
+  {id:'blue',  name:'Blue Chip',  basePrice:150, volatility:.15, safe:false},
+  {id:'tech',  name:'Tech Corp',  basePrice:200, volatility:.30, safe:false},
+  {id:'penny', name:'Penny Luck', basePrice:20,  volatility:.60, safe:false},
+];
+
+// ── GOALS ───────────────────────────────────────────────
+const GOAL_DEFS = {
+  wealth:    {name:'Wealth',    emoji:'💰', desc:'Cash + Bank + Stocks value'},
+  happiness: {name:'Happiness', emoji:'😊', desc:'Overall life satisfaction'},
+  education: {name:'Education', emoji:'🎓', desc:'Degrees earned'},
+  career:    {name:'Career',    emoji:'💼', desc:'Job level reached'},
+};
+
+// Goals per player (player picks difficulty for each)
+// This generates 4 goal targets based on the global difficulty
+function makeGoals(difficulty) {
+  const D = {easy:{wealth:3000,happiness:70,education:2,career:4},
+              normal:{wealth:5000,happiness:75,education:3,career:5},
+              hard:{wealth:8000,happiness:80,education:4,career:7}};
+  return D[difficulty] || D.normal;
+}
+
+// ── RANDOM EVENTS ───────────────────────────────────────
+const RANDOM_EVENTS = [
+  {id:'found_money', emoji:'💵', title:'Found Cash!',         desc:'You find a $50 bill on the sidewalk!',    fn:p=>{p.cash+=50; return '+$50 cash';}},
+  {id:'mugger',      emoji:'🦹', title:'Mugged!',             desc:'Sly Steve takes some of your cash!',       fn:p=>{const lost=Math.min(p.cash,Math.floor(Math.random()*100+50));p.cash=Math.max(0,p.cash-lost);return `-$${lost} stolen`;}},
+  {id:'bonus',       emoji:'🎁', title:'Company Bonus!',      desc:'Your boss gives you a performance bonus!', fn:p=>{const b=JOBS[p.job].income/2|0;p.cash+=b;return `+$${b} bonus`;}},
+  {id:'car_trouble', emoji:'🔧', title:'Car Trouble',         desc:'Repairs set you back.',                    fn:p=>{const c=Math.min(p.cash,150);p.cash-=c;return `-$${c} repairs`;}},
+  {id:'sale',        emoji:'🏷️', title:'Clothing Sale!',      desc:'Style Squad has a 50% off sale! Restocked.',fn:p=>{p.clothing=Math.min(8,p.clothing+2);return '+clothing 8wks';}},
+  {id:'sickday',     emoji:'🤒', title:'Sick Day',            desc:'Illness costs you hours next turn.',       fn:p=>{p.sickPenalty=4;return '-4h next week';}},
+  {id:'lottery',     emoji:'🎰', title:'Lottery Winner!',     desc:'You win the city lottery!',               fn:p=>{p.cash+=500;return '+$500 lottery';}},
+  {id:'promotion',   emoji:'⬆️', title:'Promotion Offer!',   desc:'Your experience gets noticed!',            fn:p=>{p.exp=Math.min(p.exp+15,100);p.dep=Math.min(p.dep+10,100);return '+15 EXP +10 DEP';}},
+  {id:'market_crash',emoji:'📉', title:'Market Crash!',       desc:'Stock values plummet.',                   fn:p=>{for(const k in p.stocks)p.stocks[k]=Math.floor(p.stocks[k]*.4);return 'stocks -60%';}},
+  {id:'payraise',    emoji:'💎', title:'Pay Raise!',          desc:'Your boss gives you a raise this week.',  fn:p=>{p.cash+=JOBS[p.job].income*.5|0;return `+$${JOBS[p.job].income*.5|0} extra pay`;}},
+];
+
+// ════════════════════════════════════════════════════════
+//  SOUND SYSTEM
+// ════════════════════════════════════════════════════════
+const Sound = (() => {
+  let ctx = null;
+  const init = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+  };
+  const unlock = () => { init(); if (ctx.state === 'suspended') ctx.resume(); };
+
+  const tone = (freq, dur, type='sine', vol=.25, startTime=0) => {
+    if (!ctx) return;
+    const t = ctx.currentTime + startTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(.001, t + dur);
+    osc.start(t); osc.stop(t + dur + .01);
+  };
+
+  return {
+    unlock,
+    click() { tone(440, .06, 'square', .15); },
+    move()  { tone(330, .08, 'sine', .2); },
+    arrive(){ tone(523, .1,'sine',.3,0); tone(659,.15,'sine',.3,.1); },
+    buy()   { tone(440,.05,'square',.2,0); tone(550,.08,'sine',.2,.06); },
+    error() { tone(150,.2,'sawtooth',.3); },
+    work()  { tone(440,.05,'square',.15,0); tone(350,.05,'square',.15,.06); tone(440,.05,'square',.15,.12); },
+    weekEnd(){ [523,659,784,1047].forEach((f,i)=>tone(f,.2,'sine',.3,i*.18)); },
+    win()   { [523,659,784,1047,1319].forEach((f,i)=>tone(f,.3,'sine',.4,i*.2)); },
+    event() { tone(880,.1,'sine',.3,0); tone(1047,.15,'sine',.3,.12); },
+    notify(){ tone(660,.1,'sine',.25,0); tone(880,.15,'sine',.25,.12); },
+  };
+})();
+
+// ════════════════════════════════════════════════════════
+//  CANVAS BOARD RENDERER
+// ════════════════════════════════════════════════════════
+const Board = (() => {
+  const W = 760, H = 580;
+  let canvas, ctx, dpr;
+  let hoverLoc = -1;
+  let reachable = new Set();
+  let moveMode = false;
+  let animPlayers = []; // {x,y,color,label,moving,path,progress}
+
+  // Location pixel positions on canvas (ring layout)
+  const POS = [
+    {x:105, y:62},   // 0 employment   — top-left
+    {x:290, y:62},   // 1 university
+    {x:475, y:62},   // 2 tradeschool
+    {x:660, y:62},   // 3 grocery      — top-right
+    {x:720, y:160},  // 4 clothing     — right side upper
+    {x:720, y:330},  // 5 bank         — right side lower
+    {x:720, y:470},  // 6 rentoffice   — bottom-right corner
+    {x:580, y:530},  // 7 grindpad
+    {x:395, y:530},  // 8 urbanheights
+    {x:210, y:530},  // 9 fastfood     — bottom
+    {x:70,  y:430},  // 10 park        — left lower
+    {x:70,  y:230},  // 11 lucky       — left upper
+  ];
+
+  // Ring path points (road polyline for rendering)
+  const RING_PATH = [
+    {x:50,  y:62},
+    ...POS.slice(0,4),
+    {x:740, y:62},
+    ...POS.slice(4,7),
+    {x:740, y:540},
+    ...POS.slice(7,10),
+    {x:50,  y:540},
+    ...POS.slice(10),
+    {x:50,  y:62},
+  ];
+
+  function init() {
+    canvas = document.getElementById('boardCanvas');
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('click', onClick);
+    canvas.addEventListener('mouseleave', () => { hoverLoc = -1; });
+  }
+
+  function locAt(mx, my) {
+    for (let i = 0; i < LOCS.length; i++) {
+      const p = POS[i];
+      const dx = mx - p.x, dy = my - p.y;
+      if (dx*dx + dy*dy < 38*38) return i;
+    }
+    return -1;
+  }
+
+  function onMouseMove(e) {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left), my = (e.clientY - r.top);
+    const prev = hoverLoc;
+    hoverLoc = locAt(mx, my);
+    if (hoverLoc !== prev) canvas.style.cursor = hoverLoc >= 0 ? 'pointer' : 'default';
+  }
+
+  function onClick(e) {
+    Sound.unlock();
+    if (!moveMode) return;
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left), my = (e.clientY - r.top);
+    const li = locAt(mx, my);
+    if (li >= 0 && reachable.has(li)) {
+      Game.movePlayerTo(li);
+    }
+  }
+
+  function setMoveMode(on, reachSet) {
+    moveMode = on;
+    reachable = reachSet || new Set();
+  }
+
+  function setAnimPlayers(players) {
+    animPlayers = players.map(p => ({
+      x: POS[p.pos].x,
+      y: POS[p.pos].y,
+      targetX: POS[p.pos].x,
+      targetY: POS[p.pos].y,
+      color: p.color,
+      label: p.label,
+      moving: false,
+      queue: [],
+    }));
+  }
+
+  function animatePlayerTo(playerIdx, destIdx, onDone) {
+    const ap = animPlayers[playerIdx];
+    if (!ap) return;
+    const dest = POS[destIdx];
+    ap.targetX = dest.x;
+    ap.targetY = dest.y;
+    ap.moving = true;
+    ap._onDone = onDone;
+  }
+
+  function snapPlayerTo(playerIdx, locIdx) {
+    const ap = animPlayers[playerIdx];
+    if (!ap) return;
+    const p = POS[locIdx];
+    ap.x = p.x; ap.y = p.y;
+    ap.targetX = p.x; ap.targetY = p.y;
+    ap.moving = false;
+  }
+
+  function drawBoard() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Sky/background gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#0a0a1a');
+    bgGrad.addColorStop(1, '#0e0e22');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // City center park decoration
+    ctx.save();
+    ctx.globalAlpha = .15;
+    ctx.fillStyle = '#224422';
+    ctx.beginPath(); ctx.arc(W/2-30, H/2-10, 120, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = .08;
+    ctx.fillStyle = '#336633';
+    ctx.beginPath(); ctx.arc(W/2-30, H/2-10, 160, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Draw decorative center text
+    ctx.save();
+    ctx.globalAlpha = .08;
+    ctx.font = 'bold 48px system-ui';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🏙️', W/2 - 30, H/2 - 10);
+    ctx.restore();
+
+    // Road outline (shadow)
+    ctx.save();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 34;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    drawRingPath();
+    ctx.stroke();
+    ctx.restore();
+
+    // Main road fill
+    ctx.save();
+    ctx.strokeStyle = '#222233';
+    ctx.lineWidth = 28;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    drawRingPath();
+    ctx.stroke();
+    ctx.restore();
+
+    // Road center dashes (yellow)
+    ctx.save();
+    ctx.strokeStyle = '#555533';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 10]);
+    ctx.lineCap = 'butt';
+    drawRingPath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Draw location buildings
+    for (let i = 0; i < LOCS.length; i++) {
+      drawLocation(i);
+    }
+
+    // Player tokens (with animation interpolation)
+    for (const ap of animPlayers) {
+      const speed = 6;
+      const dx = ap.targetX - ap.x, dy = ap.targetY - ap.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > 2) {
+        ap.x += dx/dist * Math.min(speed, dist);
+        ap.y += dy/dist * Math.min(speed, dist);
+      } else {
+        ap.x = ap.targetX; ap.y = ap.targetY;
+        if (ap.moving) {
+          ap.moving = false;
+          if (ap._onDone) { ap._onDone(); ap._onDone = null; }
+        }
+      }
+      drawPlayerToken(ap.x, ap.y, ap.color, ap.label);
+    }
+  }
+
+  function drawRingPath() {
+    ctx.beginPath();
+    ctx.moveTo(RING_PATH[0].x, RING_PATH[0].y);
+    for (let i = 1; i < RING_PATH.length; i++) {
+      ctx.lineTo(RING_PATH[i].x, RING_PATH[i].y);
+    }
+  }
+
+  function drawLocation(i) {
+    const loc = LOCS[i];
+    const p = POS[i];
+    const isHover = (hoverLoc === i);
+    const isReach = moveMode && reachable.has(i);
+
+    const R = 36;
+
+    // Shadow
+    ctx.save();
+    ctx.globalAlpha = .4;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(p.x + 3, p.y + 4, R, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // Glow if reachable
+    if (isReach) {
+      ctx.save();
+      ctx.globalAlpha = .5;
+      ctx.shadowColor = '#44ff66';
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = '#44ff66';
+      ctx.beginPath(); ctx.arc(p.x, p.y, R+4, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    // Background circle
+    const grad = ctx.createRadialGradient(p.x-6, p.y-6, 2, p.x, p.y, R);
+    grad.addColorStop(0, lighten(loc.color, .4));
+    grad.addColorStop(1, darken(loc.color, .5));
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI*2); ctx.fill();
+
+    // Border
+    ctx.strokeStyle = isHover ? '#ffffff' : isReach ? '#44ff88' : lighten(loc.color, .3);
+    ctx.lineWidth = isHover ? 3 : 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI*2); ctx.stroke();
+
+    // Emoji icon
+    ctx.font = '22px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(loc.emoji, p.x, p.y - 4);
+
+    // Label below
+    ctx.font = `bold ${isHover ? 12 : 10}px system-ui`;
+    ctx.fillStyle = isHover ? '#ffffff' : '#ccccdd';
+    ctx.textBaseline = 'top';
+    const label = loc.name.length > 12 ? loc.name.substring(0, 11) + '…' : loc.name;
+    ctx.fillText(label, p.x, p.y + R + 4);
+
+    // Hours indicator if in move mode
+    if (moveMode && Game.state) {
+      const cp = Game.currentPlayer();
+      if (cp) {
+        const h = ringDist(cp.pos, i);
+        if (h > 0) {
+          ctx.font = '10px system-ui';
+          ctx.fillStyle = isReach ? '#44ff88' : '#666677';
+          ctx.fillText(`${h}h`, p.x, p.y - R - 14);
+        }
+      }
+    }
+  }
+
+  function drawPlayerToken(x, y, color, label) {
+    const R = 12;
+    // Shadow
+    ctx.save();
+    ctx.globalAlpha = .5;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(x+2, y+2, R, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Body
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y);
+  }
+
+  function lighten(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, (n>>16) + amt*255 | 0);
+    const g = Math.min(255, ((n>>8)&0xff) + amt*255 | 0);
+    const b = Math.min(255, (n&0xff) + amt*255 | 0);
+    return `rgb(${r},${g},${b})`;
+  }
+  function darken(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.max(0, (n>>16) - amt*255 | 0);
+    const g = Math.max(0, ((n>>8)&0xff) - amt*255 | 0);
+    const b = Math.max(0, (n&0xff) - amt*255 | 0);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  let rafId = null;
+  function startLoop() {
+    if (rafId) return;
+    const loop = () => { drawBoard(); rafId = requestAnimationFrame(loop); };
+    rafId = requestAnimationFrame(loop);
+  }
+
+  return { init, setMoveMode, setAnimPlayers, animatePlayerTo, snapPlayerTo, startLoop, POS };
+})();
+
+// ════════════════════════════════════════════════════════
+//  PLAYER CLASS
+// ════════════════════════════════════════════════════════
+class Player {
+  constructor(id, name, isHuman, difficulty) {
+    this.id       = id;
+    this.name     = name;
+    this.isHuman  = isHuman;
+    this.color    = PLAYER_COLORS[id];
+    this.emoji    = PLAYER_EMOJIS[id];
+    this.pos      = 0;        // location index (ring)
+    this.cash     = 300;      // pocket cash (can be stolen)
+    this.bank     = 0;        // bank balance (safe)
+    this.food     = 2;        // weeks of food remaining (0=starving)
+    this.clothing = 8;        // weeks until clothing needed
+    this.housing  = 0;        // housing level (0=homeless, 1=grindpad, 2=urbanheights)
+    this.rentDue  = 4;        // weeks until rent due
+    this.job      = 0;        // job index
+    this.exp      = 0;        // experience points (never decreases)
+    this.dep      = 20;       // dependability (0-100, degrades 3/week)
+    this.edu      = 0;        // education level (degrees)
+    this.stocks   = {tbill:0, blue:0, tech:0, penny:0};
+    this.loanAmt  = 0;        // outstanding loan
+    this.week     = 0;
+    this.hours    = HOURS_PER_WEEK; // hours left this week
+    this.sickPenalty = 0;     // hours lost next week
+    this.goals    = makeGoals(difficulty);
+    this.goalRevealDone = false;
+  }
+
+  get totalWealth() {
+    return this.cash + this.bank + this.stockValue();
+  }
+
+  stockValue() {
+    let v = 0;
+    const prices = Game.state?.stockPrices || {};
+    for (const k in this.stocks) v += (this.stocks[k] || 0) * (prices[k] || STOCKS_DEF.find(s=>s.id===k).basePrice);
+    return v;
+  }
+
+  get happiness() {
+    let h = 40;
+    h += HOUSING[this.housing].happBonus;
+    h += Math.min(15, this.food * 5);
+    h += this.clothing > 0 ? 10 : -10;
+    h += Math.min(20, this.job * 3);
+    h += Math.min(20, this.totalWealth / 400 | 0);
+    h -= this.food <= 0 ? 15 : 0;
+    return Math.max(0, Math.min(100, h));
+  }
+
+  goalPct(type) {
+    switch(type) {
+      case 'wealth':    return Math.min(100, (this.totalWealth / this.goals.wealth * 100) | 0);
+      case 'happiness': return Math.min(100, (this.happiness / this.goals.happiness * 100) | 0);
+      case 'education': return Math.min(100, (this.edu / this.goals.education * 100) | 0);
+      case 'career':    return Math.min(100, (this.job / this.goals.career * 100) | 0);
+      default: return 0;
+    }
+  }
+
+  hasWon() {
+    return this.goalPct('wealth') >= 100
+        && this.goalPct('happiness') >= 100
+        && this.goalPct('education') >= 100
+        && this.goalPct('career') >= 100;
+  }
+
+  canWork() { return this.job > 0 && this.hours >= HOURS_WORK; }
+  canStudyUniv() { return this.hours >= HOURS_STUDY && this.cash >= 400; }
+  canStudyTrade() { return this.hours >= 2 && this.cash >= 200; }
+
+  weeklyIncome() { return JOBS[this.job].income; }
+
+  processEndOfWeek() {
+    const events = [];
+    this.week++;
+    this.dep = Math.max(0, this.dep - 3);
+
+    // Food
+    this.food = Math.max(0, this.food - 1);
+    if (this.food <= 0) {
+      const penalty = 100;
+      this.cash = Math.max(0, this.cash - penalty);
+      events.push({type:'neg', text:`🍽️ Starving! -$${penalty} emergency food`});
+    }
+
+    // Clothing
+    this.clothing = Math.max(0, this.clothing - 1);
+    if (this.clothing <= 0) {
+      events.push({type:'warn', text:'👗 You need new clothes! Visit Style Squad.'});
+    }
+
+    // Income
+    const income = this.weeklyIncome();
+    if (income > 0) {
+      this.cash += income;
+      events.push({type:'pos', text:`💼 Earned $${income} from work`});
+    }
+
+    // Loan interest
+    if (this.loanAmt > 0) {
+      const interest = Math.floor(this.loanAmt * .05);
+      this.loanAmt += interest;
+      events.push({type:'neg', text:`💳 Loan interest +$${interest} (owe $${this.loanAmt})`});
+    }
+
+    // Rent
+    this.rentDue--;
+    if (this.rentDue <= 0) {
+      this.rentDue = 4;
+      const rent = HOUSING[this.housing].rent;
+      if (rent > 0) {
+        if (this.cash >= rent) {
+          this.cash -= rent;
+          events.push({type:'neg', text:`🏠 Rent paid: -$${rent}`});
+        } else {
+          // Try bank
+          const deficit = rent - this.cash;
+          this.cash = 0;
+          this.bank = Math.max(0, this.bank - deficit);
+          events.push({type:'neg', text:`🏠 Rent paid (from bank): -$${rent}`});
+        }
+      }
+    }
+
+    // Sly Steve (housing 1 theft)
+    if (this.housing === 1 && Math.random() < .2) {
+      const stolen = Math.min(this.cash, Math.floor(Math.random()*100+30));
+      if (stolen > 0) {
+        this.cash -= stolen;
+        events.push({type:'neg', text:`🦹 Sly Steve stole $${stolen}!`});
+      }
+    }
+
+    // Sick penalty
+    if (this.sickPenalty > 0) {
+      events.push({type:'neg', text:`🤒 Sick — lose ${this.sickPenalty}h next week`});
+    }
+
+    return events;
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════════════════════
+const Game = (() => {
+  let S = null; // game state
+
+  const state = { get() { return S; } };
+
+  function currentPlayer() { return S?.players[S.currentPlayerIdx]; }
+
+  function startGame() {
+    Sound.unlock();
+    const numHumans = parseInt(document.getElementById('numPlayersSelect').value);
+    const diff = document.querySelector('.diff-btn.selected')?.dataset.diff || 'normal';
+
+    const players = [];
+    for (let i = 0; i < numHumans; i++) {
+      const nameInput = document.getElementById(`pname${i}`);
+      const name = nameInput?.value.trim() || PLAYER_NAMES[i];
+      players.push(new Player(i, name, true, diff));
+    }
+    // Add CPU Jones
+    if (numHumans < 3) {
+      const jonesId = players.length;
+      const jones = new Player(jonesId, 'Jones (CPU)', false, diff);
+      jones.color = PLAYER_COLORS[jonesId];
+      players.push(jones);
+    }
+
+    S = {
+      players,
+      currentPlayerIdx: 0,
+      globalWeek: 1,
+      difficulty: diff,
+      stockPrices: {},
+      moveMode: false,
+      phase: 'goals', // goals → playing
+      goalRevealIdx: 0,
+      economyIndex: 5, // 1-10
+    };
+
+    // Init stock prices
+    for (const stk of STOCKS_DEF) S.stockPrices[stk.id] = stk.basePrice;
+
+    UI.showGoalReveal();
+  }
+
+  function showGoalReveal() {
+    UI.showGoalReveal();
+  }
+
+  function beginPlaying() {
+    S.phase = 'playing';
+    UI.showGame();
+    Board.init();
+    Board.setAnimPlayers(S.players.map(p => ({pos:p.pos, color:p.color, label: p.name[0]})));
+    Board.startLoop();
+    refreshHours();
+    UI.renderPlayerCards();
+    setLog('The city awaits! Roll to move.');
+  }
+
+  function refreshHours() {
+    const p = currentPlayer();
+    if (!p) return;
+    document.getElementById('hudWeek').textContent = `Week ${S.globalWeek} — ${p.name}'s turn (${p.hours}h left)`;
+  }
+
+  function startMoveMode() {
+    const p = currentPlayer();
+    if (!p.isHuman) return;
+    if (p.hours < HOURS_PER_MOVE) { notify('Not enough hours to move!'); Sound.error(); return; }
+    S.moveMode = true;
+    document.getElementById('btnMove').textContent = '❌ Cancel';
+    document.getElementById('btnMove').onclick = cancelMoveMode;
+
+    // Compute reachable locations
+    const reach = new Set();
+    const maxSteps = Math.floor(p.hours / HOURS_PER_MOVE);
+    for (let li = 0; li < LOCS.length; li++) {
+      if (li !== p.pos) {
+        const d = ringDist(p.pos, li);
+        if (d <= p.hours) reach.add(li);
+      }
+    }
+    Board.setMoveMode(true, reach);
+    setLog('Click a destination on the board.');
+    Sound.click();
+  }
+
+  function cancelMoveMode() {
+    S.moveMode = false;
+    Board.setMoveMode(false);
+    document.getElementById('btnMove').textContent = '🚶 Move';
+    document.getElementById('btnMove').onclick = () => Game.startMoveMode();
+  }
+
+  function movePlayerTo(locIdx) {
+    const p = currentPlayer();
+    if (!p) return;
+    const hours = ringDist(p.pos, locIdx);
+    if (hours > p.hours) { notify('Not enough hours!'); Sound.error(); return; }
+
+    S.moveMode = false;
+    Board.setMoveMode(false);
+    document.getElementById('btnMove').textContent = '🚶 Move';
+    document.getElementById('btnMove').onclick = () => Game.startMoveMode();
+
+    p.hours -= hours;
+    p.pos = locIdx;
+
+    // Animate movement step-by-step
+    const dir = ringDir(p.pos > locIdx ? locIdx : p.pos, p.pos > locIdx ? p.pos : locIdx);
+    Board.animatePlayerTo(p.id, locIdx, () => {
+      Sound.arrive();
+      refreshHours();
+      UI.renderPlayerCards();
+      openLocation(locIdx);
+    });
+    setLog(`Moving to ${LOCS[locIdx].name}…`);
+  }
+
+  function openLocation(locIdx) {
+    const loc = LOCS[locIdx];
+    document.getElementById('locModalIcon').textContent  = loc.emoji;
+    document.getElementById('locModalTitle').textContent = loc.name;
+    document.getElementById('locModalDesc').textContent  = loc.desc;
+
+    const p = currentPlayer();
+    const body = document.getElementById('locModalBody');
+    body.innerHTML = '';
+
+    buildLocationUI(locIdx, p, body);
+
+    document.getElementById('locModal').classList.add('visible');
+    document.getElementById('btnAction').disabled = false;
+  }
+
+  function closeModal() {
+    document.getElementById('locModal').classList.remove('visible');
+    document.getElementById('btnAction').disabled = true;
+    UI.renderPlayerCards();
+    refreshHours();
+    checkWin();
+  }
+
+  function doLocationAction() {
+    const p = currentPlayer();
+    if (!p) return;
+    openLocation(p.pos);
+  }
+
+  // ── Location UI builders ─────────────────────────────
+  function buildLocationUI(locIdx, p, body) {
+    const id = LOCS[locIdx].id;
+    switch(id) {
+      case 'employment': buildEmployment(p, body); break;
+      case 'university': buildUniversity(p, body); break;
+      case 'tradeschool':buildTradeSchool(p, body); break;
+      case 'grocery':    buildGrocery(p, body); break;
+      case 'fastfood':   buildFastFood(p, body); break;
+      case 'clothing':   buildClothing(p, body); break;
+      case 'bank':       buildBank(p, body); break;
+      case 'rentoffice': buildRentOffice(p, body); break;
+      case 'grindpad':   buildHousing(p, body, 1); break;
+      case 'urbanheights':buildHousing(p, body, 2); break;
+      case 'park':       buildPark(p, body); break;
+      case 'lucky':      buildLucky(p, body); break;
+      default:           body.innerHTML = '<p style="color:var(--muted)">Nothing to do here.</p>';
+    }
+  }
+
+  function locBtn(label, cost, costLabel, canAfford, onClick, body) {
+    const btn = document.createElement('button');
+    btn.className = 'loc-btn';
+    const canDo = canAfford !== false;
+    btn.disabled = !canDo;
+    const cls = canDo ? 'can-afford' : 'cant-afford';
+    btn.innerHTML = `<span>${label}</span><span class="loc-btn-cost ${cls}">${costLabel}</span>`;
+    btn.onclick = () => { Sound.buy(); onClick(); UI.renderPlayerCards(); refreshHours(); checkWin(); };
+    body.appendChild(btn);
+    return btn;
+  }
+
+  function sectionLabel(text, body) {
+    const d = document.createElement('div');
+    d.className = 'section-label';
+    d.textContent = text;
+    body.appendChild(d);
+  }
+
+  function infoText(text, body) {
+    const d = document.createElement('div');
+    d.style.cssText = 'font-size:12px;color:var(--muted);margin:4px 0;';
+    d.textContent = text;
+    body.appendChild(d);
+  }
+
+  function buildEmployment(p, body) {
+    sectionLabel('Current Job', body);
+    infoText(`${JOBS[p.job].emoji} ${JOBS[p.job].name} — $${JOBS[p.job].income}/week`, body);
+    infoText(`EXP: ${p.exp}/100  DEP: ${p.dep}/100  EDU: ${p.edu}`, body);
+
+    sectionLabel('Available Jobs', body);
+    for (let i = 1; i < JOBS.length; i++) {
+      const j = JOBS[i];
+      const canQualify = p.exp >= j.expReq && p.dep >= j.depReq && p.edu >= j.educReq;
+      const isCurrent = p.job === i;
+      const label = `${j.emoji} ${j.name} ($${j.income}/wk)`;
+      const req = isCurrent ? 'Current' : `EXP:${j.expReq} DEP:${j.depReq} EDU:${j.educReq}`;
+      const btn = locBtn(label, 0, req, canQualify && !isCurrent, () => {
+        p.job = i;
+        setLog(`Got job as ${j.name}!`);
+        notify(`New job: ${j.emoji} ${j.name}!`);
+        buildEmployment(p, body);
+      }, body);
+      if (isCurrent) btn.style.borderColor = '#4488ff';
+    }
+  }
+
+  function buildUniversity(p, body) {
+    sectionLabel('Courses', body);
+    const courses = COURSES.filter(c => c.loc === 'university');
+    for (let i = 0; i < courses.length; i++) {
+      const c = courses[i];
+      const eduNeeded = i; // need edu=i to take this course
+      const canTake = p.edu >= eduNeeded && p.hours >= c.time && p.cash >= c.cost;
+      const costStr = `-$${c.cost} · ${c.time}h`;
+      locBtn(`📚 ${c.name}`, c.cost, costStr, canTake, () => {
+        p.cash -= c.cost;
+        p.hours -= c.time;
+        p.edu++;
+        p.exp += 5;
+        setLog(`Studied ${c.name}! Education level ${p.edu}`);
+        notify(`🎓 Education now level ${p.edu}!`);
+      }, body);
+    }
+    infoText(`Your education level: ${p.edu}/5`, body);
+  }
+
+  function buildTradeSchool(p, body) {
+    sectionLabel('Vocational Training', body);
+    const c = COURSES.find(c => c.loc === 'tradeschool');
+    const canTake = p.hours >= c.time && p.cash >= c.cost;
+    locBtn(`🔧 ${c.name} (+1 EDU)`, c.cost, `-$${c.cost} · ${c.time}h`, canTake, () => {
+      p.cash -= c.cost;
+      p.hours -= c.time;
+      p.edu++;
+      p.exp += 3;
+      setLog(`Trade School complete! Education level ${p.edu}`);
+      notify(`🔧 Education now level ${p.edu}!`);
+    }, body);
+    infoText(`Cheaper and faster than university, but only one course available.`, body);
+    infoText(`Your education level: ${p.edu}/5`, body);
+  }
+
+  function buildGrocery(p, body) {
+    sectionLabel('Buy Groceries', body);
+    const options = [
+      {weeks:1, cost:60,  label:'1-week supply'},
+      {weeks:2, cost:110, label:'2-week supply (save $10)'},
+      {weeks:4, cost:200, label:'4-week supply (save $40)'},
+    ];
+    for (const opt of options) {
+      const canBuy = p.cash >= opt.cost && p.hours >= HOURS_SHOP;
+      locBtn(`🛒 ${opt.label}`, opt.cost, `-$${opt.cost}`, canBuy, () => {
+        p.cash -= opt.cost;
+        p.hours -= HOURS_SHOP;
+        p.food = Math.min(8, p.food + opt.weeks);
+        setLog(`Bought ${opt.weeks}-week food supply!`);
+      }, body);
+    }
+    infoText(`Food remaining: ${p.food} week(s)`, body);
+  }
+
+  function buildFastFood(p, body) {
+    sectionLabel('Eat Here', body);
+    locBtn('🍔 Quick Meal (1 week food)', 40, '-$40', p.cash >= 40, () => {
+      p.cash -= 40;
+      p.food = Math.min(8, p.food + 1);
+      setLog('Ate at Burger Bonanza!');
+    }, body);
+
+    sectionLabel('Work Here', body);
+    if (p.job === 0 || p.job === 1) {
+      locBtn('🍟 Apply as Burger Flipper ($320/wk)', 0, 'Free', true, () => {
+        p.job = 1;
+        setLog('Started as Burger Flipper!');
+        notify('🍟 Got the job!');
+      }, body);
+    }
+    if (p.job === 1) {
+      const canWork = p.canWork();
+      locBtn(`💪 Work a shift (+EXP +DEP)`, 0, `${HOURS_WORK}h`, canWork, () => {
+        p.hours -= HOURS_WORK;
+        p.exp = Math.min(100, p.exp + 2);
+        p.dep = Math.min(100, p.dep + 2);
+        setLog(`Worked a shift. EXP:${p.exp} DEP:${p.dep}`);
+      }, body);
+    }
+    infoText(`Food remaining: ${p.food} week(s)`, body);
+  }
+
+  function buildClothing(p, body) {
+    sectionLabel('Buy Clothes', body);
+    const opts = [
+      {name:'Budget Outfit',  cost:80,  clothingWeeks:8},
+      {name:'Stylish Outfit', cost:180, clothingWeeks:10},
+      {name:'Designer Look',  cost:350, clothingWeeks:12},
+    ];
+    for (const opt of opts) {
+      locBtn(`👗 ${opt.name}`, opt.cost, `-$${opt.cost}`, p.cash >= opt.cost && p.hours >= HOURS_SHOP, () => {
+        p.cash -= opt.cost;
+        p.hours -= HOURS_SHOP;
+        p.clothing = opt.clothingWeeks;
+        setLog(`Bought ${opt.name}!`);
+        notify('👗 Looking fresh!');
+      }, body);
+    }
+    infoText(`Clothing expires in: ${p.clothing} week(s)`, body);
+    if (p.clothing <= 0) {
+      infoText('⚠️ You NEED new clothes — happiness penalty!', body);
+    }
+  }
+
+  function buildBank(p, body) {
+    sectionLabel('Account Status', body);
+    infoText(`Cash: $${p.cash}  Bank: $${p.bank}  Loan: $${p.loanAmt}`, body);
+
+    sectionLabel('Deposit / Withdraw', body);
+    const depositAmts = [100, 500, 1000, 'all'];
+    for (const amt of depositAmts) {
+      const actual = amt === 'all' ? p.cash : Math.min(p.cash, amt);
+      if (actual <= 0 && p.cash <= 0) continue;
+      const canDep = p.cash >= (amt === 'all' ? 1 : amt) && p.hours >= HOURS_SHOP;
+      locBtn(`💰 Deposit $${amt === 'all' ? p.cash : amt}`, 0, `-cash`, canDep, () => {
+        const a = amt === 'all' ? p.cash : Math.min(p.cash, amt);
+        p.bank += a; p.cash -= a;
+        p.hours -= HOURS_SHOP;
+        setLog(`Deposited $${a} to bank.`);
+      }, body);
+    }
+    const withAmts = [100, 500, 1000];
+    for (const amt of withAmts) {
+      locBtn(`🏧 Withdraw $${amt}`, 0, `+cash`, p.bank >= amt && p.hours >= HOURS_SHOP, () => {
+        p.bank -= amt; p.cash += amt;
+        p.hours -= HOURS_SHOP;
+        setLog(`Withdrew $${amt} from bank.`);
+      }, body);
+    }
+
+    sectionLabel('Loans', body);
+    if (p.loanAmt === 0) {
+      for (const amt of [500, 1000, 2000]) {
+        locBtn(`💳 Take $${amt} loan (5%/wk interest)`, 0, `+$${amt}`, p.hours >= HOURS_SHOP, () => {
+          p.cash += amt; p.loanAmt += amt;
+          p.hours -= HOURS_SHOP;
+          setLog(`Took loan of $${amt}. Repay at 5% interest/week.`);
+        }, body);
+      }
+    } else {
+      locBtn(`💳 Repay loan ($${p.loanAmt})`, p.loanAmt, `-$${p.loanAmt}`,
+        (p.cash >= p.loanAmt || p.bank >= p.loanAmt) && p.hours >= HOURS_SHOP, () => {
+        const total = p.loanAmt;
+        if (p.cash >= total) { p.cash -= total; }
+        else { const rem = total - p.cash; p.cash = 0; p.bank -= rem; }
+        p.loanAmt = 0;
+        p.hours -= HOURS_SHOP;
+        setLog(`Repaid loan of $${total}!`);
+        notify('💳 Loan cleared!');
+      }, body);
+    }
+
+    sectionLabel('Stock Market', body);
+    buildStocks(p, body);
+  }
+
+  function buildStocks(p, body) {
+    for (const stk of STOCKS_DEF) {
+      const price = S.stockPrices[stk.id];
+      const owned = p.stocks[stk.id] || 0;
+      const row = document.createElement('div');
+      row.className = 'stock-row';
+      const chg = ((price / stk.basePrice - 1) * 100) | 0;
+      const chgClass = chg >= 0 ? 'up' : 'down';
+      row.innerHTML = `
+        <div class="stock-name">${stk.name}<br><small style="color:var(--muted)">${stk.safe?'🔒Safe':'📈Risk'}</small></div>
+        <div class="stock-price">$${price}</div>
+        <div class="stock-change ${chgClass}">${chg>=0?'+':''}${chg}%</div>
+        <div class="stock-owned">${owned} shares</div>
+        <div class="stock-actions"></div>`;
+      const actions = row.querySelector('.stock-actions');
+      const buyBtn = document.createElement('button');
+      buyBtn.className = 'btn btn-green btn-sm'; buyBtn.textContent = 'Buy';
+      buyBtn.disabled = p.cash < price || p.hours < HOURS_SHOP;
+      buyBtn.onclick = () => {
+        if(p.cash < price){ Sound.error(); return; }
+        p.cash -= price; p.stocks[stk.id] = (p.stocks[stk.id]||0)+1;
+        p.hours -= HOURS_SHOP;
+        setLog(`Bought 1 ${stk.name} share @ $${price}`);
+        Sound.buy();
+        closeModal(); openLocation(LOCS.findIndex(l=>l.id==='bank'));
+      };
+      const sellBtn = document.createElement('button');
+      sellBtn.className = 'btn btn-red btn-sm'; sellBtn.textContent = 'Sell';
+      sellBtn.disabled = !owned || p.hours < HOURS_SHOP;
+      sellBtn.onclick = () => {
+        if(!p.stocks[stk.id]){ Sound.error(); return; }
+        p.cash += price; p.stocks[stk.id]--;
+        p.hours -= HOURS_SHOP;
+        setLog(`Sold 1 ${stk.name} @ $${price}`);
+        Sound.buy();
+        closeModal(); openLocation(LOCS.findIndex(l=>l.id==='bank'));
+      };
+      actions.appendChild(buyBtn); actions.appendChild(sellBtn);
+      body.appendChild(row);
+    }
+  }
+
+  function buildRentOffice(p, body) {
+    sectionLabel('Current Housing', body);
+    infoText(`${HOUSING[p.housing].emoji||'🏠'} ${HOUSING[p.housing].name} — $${HOUSING[p.housing].rent}/4wks`, body);
+
+    sectionLabel('Housing Options', body);
+    for (let i = 1; i < HOUSING.length; i++) {
+      const h = HOUSING[i];
+      const isCurrent = p.housing === i;
+      const depositCost = h.rent; // first month deposit
+      const canMove = !isCurrent && p.cash >= depositCost;
+      const btn = locBtn(`${i===1?'🏚️':'🏢'} ${h.name} ($${h.rent}/4wks) +${h.happBonus} Happ`,
+        depositCost, isCurrent ? 'Current' : `-$${depositCost} deposit`,
+        canMove, () => {
+          p.cash -= depositCost;
+          p.hours -= HOURS_SHOP;
+          p.housing = i;
+          p.rentDue = 4;
+          setLog(`Moved to ${h.name}!`);
+          notify(`${i===1?'🏚️':'🏢'} Moved in!`);
+        }, body);
+      if (isCurrent) btn.style.borderColor = '#4488ff';
+    }
+    infoText(`Rent due in: ${p.rentDue} week(s)`, body);
+    if (p.housing === 1) infoText('⚠️ Sly Steve may rob you here (20% chance/week)', body);
+  }
+
+  function buildHousing(p, body, hLevel) {
+    const h = HOUSING[hLevel];
+    sectionLabel('Housing Info', body);
+    infoText(`${hLevel===1?'🏚️':'🏢'} ${h.name}`, body);
+    infoText(`Rent: $${h.rent} every 4 weeks`, body);
+    infoText(`Happiness bonus: +${h.happBonus}`, body);
+    if (!h.safe) infoText('⚠️ Not safe — Sly Steve may steal here!', body);
+    else infoText('✅ Secure building — no theft risk', body);
+
+    if (p.housing !== hLevel) {
+      locBtn(`Move In (deposit $${h.rent})`, h.rent, `-$${h.rent}`, p.cash >= h.rent, () => {
+        p.cash -= h.rent;
+        p.housing = hLevel;
+        p.rentDue = 4;
+        setLog(`Moved to ${h.name}!`);
+        notify(`Moved in to ${h.name}!`);
+        p.pos = LOCS.findIndex(l=>l.id===(hLevel===1?'grindpad':'urbanheights'));
+        Board.snapPlayerTo(p.id, p.pos);
+      }, body);
+    } else {
+      infoText('✅ You live here!', body);
+      locBtn('💤 Rest at home (4h, +happiness)', 0, '4h', p.hours >= 4, () => {
+        p.hours -= 4;
+        setLog('Rested at home.');
+        notify('Feeling refreshed!');
+      }, body);
+    }
+  }
+
+  function buildPark(p, body) {
+    sectionLabel('City Park', body);
+    infoText(`😊 Current happiness: ${p.happiness}%`, body);
+
+    locBtn('🌿 Relax (3h) — boost happiness', 0, `${HOURS_REST}h`, p.hours >= HOURS_REST, () => {
+      p.hours -= HOURS_REST;
+      // happiness is derived, but we can give temporary bonus via hidden stat
+      p.exp += 1; // small bonus
+      setLog('Relaxed in the park. Feel great!');
+      notify('😊 Happiness up!');
+    }, body);
+
+    locBtn('🏃 Jog (2h) — exercise boost', 0, '2h', p.hours >= 2, () => {
+      p.hours -= 2;
+      p.dep = Math.min(100, p.dep + 3);
+      setLog('Went for a jog! DEP +3');
+    }, body);
+
+    infoText('The park boosts your happiness and dependability.', body);
+  }
+
+  function buildLucky(p, body) {
+    sectionLabel('Lucky Corner', body);
+    infoText('Something random is about to happen…', body);
+
+    const btn = locBtn('🎲 Spin the wheel!', 0, 'Free!', true, () => {
+      const ev = RANDOM_EVENTS[Math.floor(Math.random() * RANDOM_EVENTS.length)];
+      const result = ev.fn(p);
+      Sound.event();
+      setLog(`${ev.emoji} ${ev.title}: ${result}`);
+      notify(`${ev.emoji} ${ev.title}!`);
+      const info = document.createElement('div');
+      info.style.cssText = 'background:#1a1535;border:1px solid #5533aa;border-radius:6px;padding:12px;margin-top:12px;font-size:13px;';
+      info.innerHTML = `<strong>${ev.emoji} ${ev.title}</strong><br><span style="color:var(--muted)">${ev.desc}</span><br><strong style="color:var(--accent4)">${result}</strong>`;
+      body.appendChild(info);
+      btn.disabled = true;
+      btn.textContent = 'Done!';
+    }, body);
+  }
+
+  // ── Work anywhere (if you have a job) ───────────────
+  function buildWorkOption(p, body) {
+    if (p.job > 0 && p.hours >= HOURS_WORK) {
+      sectionLabel('Work', body);
+      const j = JOBS[p.job];
+      locBtn(`${j.emoji} Work a shift — EXP/DEP +2`, 0, `${HOURS_WORK}h`, true, () => {
+        p.hours -= HOURS_WORK;
+        p.exp = Math.min(100, p.exp + 2);
+        p.dep = Math.min(100, p.dep + 2);
+        Sound.work();
+        setLog(`Worked. EXP:${p.exp} DEP:${p.dep}`);
+      }, body);
+    }
+  }
+
+  // ── End of week ──────────────────────────────────────
+  function endWeek() {
+    Sound.unlock();
+    const p = currentPlayer();
+    if (!p) return;
+
+    // Any work sessions available? (only if at work-relevant locations, handled in location UI)
+    // Process week end
+    const events = p.processEndOfWeek();
+
+    // Stock price fluctuations
+    updateStockPrices();
+
+    // Show week summary
+    showWeekSummary(p, events);
+  }
+
+  function updateStockPrices() {
+    const eco = S.economyIndex;
+    for (const stk of STOCKS_DEF) {
+      const v = stk.volatility;
+      const trend = (eco - 5) / 10; // -0.5 to +0.5
+      const change = (Math.random() * 2 - 1 + trend * .5) * v;
+      S.stockPrices[stk.id] = Math.max(5, Math.floor(stk.basePrice * (1 + change)));
+    }
+    // Economy drift
+    S.economyIndex += (Math.random() * 2 - 1) * .5;
+    S.economyIndex = Math.max(1, Math.min(10, S.economyIndex));
+  }
+
+  function showWeekSummary(p, events) {
+    Sound.weekEnd();
+    const title = document.getElementById('weekSummaryTitle');
+    const sub   = document.getElementById('weekSummaryPlayer');
+    const evDiv = document.getElementById('weekSummaryEvents');
+    title.textContent = `📅 Week ${p.week} — ${p.name}`;
+    sub.textContent   = `Happiness: ${p.happiness}% | Cash: $${p.cash} | Bank: $${p.bank}`;
+
+    evDiv.innerHTML = '';
+    for (const ev of events) {
+      const line = document.createElement('div');
+      const cls = ev.type === 'pos' ? 'ev-pos' : ev.type === 'neg' ? 'ev-neg' :
+                  ev.type === 'warn' ? 'ev-warn' : 'ev-neu';
+      line.className = cls;
+      line.textContent = ev.text;
+      evDiv.appendChild(line);
+    }
+    if (events.length === 0) {
+      const line = document.createElement('div');
+      line.className = 'ev-neu';
+      line.textContent = '— Quiet week. Nothing unusual.';
+      evDiv.appendChild(line);
+    }
+
+    document.getElementById('weekSummary').classList.add('visible');
+  }
+
+  function continueAfterWeek() {
+    document.getElementById('weekSummary').classList.remove('visible');
+    const p = currentPlayer();
+
+    // Advance to next player
+    S.currentPlayerIdx = (S.currentPlayerIdx + 1) % S.players.length;
+    if (S.currentPlayerIdx === 0) S.globalWeek++;
+
+    const next = currentPlayer();
+    next.hours = HOURS_PER_WEEK - (next.sickPenalty || 0);
+    next.sickPenalty = 0;
+
+    UI.renderPlayerCards();
+
+    // CPU turn?
+    if (!next.isHuman) {
+      setTimeout(() => runCPUTurn(next), 800);
+    } else {
+      refreshHours();
+      setLog(`${next.name}'s turn! (${next.hours}h)`);
+      checkWin();
+    }
+  }
+
+  // ── CPU AI (Jones) ───────────────────────────────────
+  function runCPUTurn(p) {
+    setLog(`${p.name} is thinking…`);
+
+    const actions = [];
+
+    // Priority: food
+    if (p.food <= 0) {
+      actions.push({loc:'grocery', action:()=>{p.cash-=60;p.food+=1;setLog(`Jones buys food.`);}});
+    }
+    // Clothing
+    if (p.clothing <= 0) {
+      actions.push({loc:'clothing', action:()=>{p.cash-=80;p.clothing=8;setLog(`Jones buys clothes.`);}});
+    }
+    // Get a job if unemployed
+    if (p.job === 0) {
+      actions.push({loc:'fastfood', action:()=>{p.job=1;setLog(`Jones got a Burger Flipper job!`);}});
+    }
+    // Work (build exp/dep)
+    if (p.job > 0 && p.exp < 100) {
+      const workLoc = LOCS[0].id;
+      actions.push({loc:'employment', action:()=>{
+        const sessions = Math.min(3, Math.floor(p.hours / HOURS_WORK));
+        for (let i = 0; i < sessions; i++) {
+          p.hours -= HOURS_WORK;
+          p.exp = Math.min(100, p.exp + 2);
+          p.dep = Math.min(100, p.dep + 2);
+        }
+        setLog(`Jones worked ${sessions} shift(s).`);
+      }});
+    }
+    // Get better job if qualified
+    for (let ji = JOBS.length - 1; ji > p.job; ji--) {
+      const j = JOBS[ji];
+      if (p.exp >= j.expReq && p.dep >= j.depReq && p.edu >= j.educReq) {
+        actions.push({loc:'employment', action:()=>{p.job=ji;setLog(`Jones got promoted to ${j.name}!`);}});
+        break;
+      }
+    }
+    // Education
+    if (p.edu < p.goals.education && p.cash >= 200) {
+      const useTrade = p.cash < 400;
+      actions.push({loc: useTrade ? 'tradeschool' : 'university', action:()=>{
+        if (useTrade) {p.cash-=200;p.hours-=2;} else {p.cash-=400;p.hours-=HOURS_STUDY;}
+        p.edu++; p.exp+=3;
+        setLog(`Jones studied. Education: ${p.edu}`);
+      }});
+    }
+    // Bank savings
+    if (p.cash > 500) {
+      actions.push({loc:'bank', action:()=>{const amt=p.cash-200;p.bank+=amt;p.cash=200;setLog(`Jones deposited $${amt}.`);}});
+    }
+
+    // Execute actions with delays
+    let delay = 0;
+    let lastPos = p.pos;
+    for (const act of actions) {
+      const locIdx = LOCS.findIndex(l => l.id === act.loc);
+      if (locIdx < 0) continue;
+      const dist = ringDist(lastPos, locIdx);
+      if (dist > p.hours) continue;
+
+      const capturedAct = act;
+      const capturedLoc = locIdx;
+      delay += 600;
+      setTimeout(() => {
+        p.hours -= dist;
+        p.pos = capturedLoc;
+        Board.snapPlayerTo(p.id, capturedLoc);
+        capturedAct.action();
+        UI.renderPlayerCards();
+        refreshHours();
+        lastPos = capturedLoc;
+      }, delay);
+    }
+
+    // End turn after actions
+    delay += 1000;
+    setTimeout(() => {
+      p.hours = 0;
+      const events = p.processEndOfWeek();
+      updateStockPrices();
+      showWeekSummary(p, events);
+    }, delay);
+  }
+
+  function checkWin() {
+    if (!S) return;
+    for (const p of S.players) {
+      if (p.hasWon()) {
+        Sound.win();
+        setTimeout(() => UI.showWin(p), 500);
+        return;
+      }
+    }
+  }
+
+  function setLog(msg) {
+    const logEl = document.getElementById('hudMsg');
+    if (logEl) logEl.textContent = msg;
+    // Also append to log lines
+    const ll = document.getElementById('logLines');
+    if (ll) {
+      const d = document.createElement('div');
+      d.textContent = msg;
+      ll.appendChild(d);
+      while (ll.children.length > 8) ll.removeChild(ll.firstChild);
+      ll.scrollTop = ll.scrollHeight;
+    }
+  }
+
+  return {
+    get state() { return S; },
+    currentPlayer,
+    startGame,
+    beginPlaying,
+    startMoveMode,
+    cancelMoveMode,
+    movePlayerTo,
+    openLocation,
+    closeModal,
+    doLocationAction,
+    endWeek,
+    continueAfterWeek,
+    checkWin,
+    setLog,
+  };
+})();
+
+// ════════════════════════════════════════════════════════
+//  UI CONTROLLER
+// ════════════════════════════════════════════════════════
+const UI = (() => {
+  function screen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  function showTitle() { screen('titleScreen'); }
+
+  function showHelp() {
+    const existing = document.getElementById('helpOverlay');
+    if (existing) { existing.remove(); return; }
+    const d = document.createElement('div');
+    d.id = 'helpOverlay';
+    d.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center;`;
+    d.innerHTML = `<div style="background:var(--panel);border:2px solid var(--border);border-radius:14px;padding:32px;max-width:560px;line-height:1.8;font-size:14px;">
+      <h2 style="margin-bottom:16px;font-size:22px;">📖 How to Play</h2>
+      <p><strong>Goal:</strong> Be the first to achieve 100% in all four life goals: <em>Wealth, Happiness, Education, Career</em>.</p>
+      <br>
+      <p><strong>Each turn:</strong> You have <strong>24 hours</strong> to spend. Travel around the city ring, visit locations, work, study, and shop. Each move costs 2 hours per step.</p>
+      <br>
+      <p><strong>Locations:</strong></p>
+      <ul style="margin-left:20px;list-style:disc;color:var(--muted)">
+        <li><strong>FastLane Agency</strong> — Find and apply for jobs</li>
+        <li><strong>Pixel U / Trade School</strong> — Earn education degrees</li>
+        <li><strong>Fresh Mart / Burger Bonanza</strong> — Buy food (weekly requirement)</li>
+        <li><strong>Style Squad</strong> — Buy clothes (every 8 weeks)</li>
+        <li><strong>Pixel Bank</strong> — Deposit money & buy stocks</li>
+        <li><strong>City Rentals / Apartments</strong> — Upgrade housing</li>
+        <li><strong>City Park</strong> — Relax & boost happiness</li>
+        <li><strong>Lucky Corner</strong> — Random events!</li>
+      </ul>
+      <br>
+      <p><strong>Weekly events:</strong> Each week income arrives, food & clothing deplete, and rent is due every 4 weeks. Watch Sly Steve at the Grind Pad!</p>
+      <br>
+      <button class="btn btn-blue btn-md" onclick="this.closest('#helpOverlay').remove()">Got it!</button>
+    </div>`;
+    document.body.appendChild(d);
+  }
+
+  function showSetup() {
+    screen('setupScreen');
+    updateSetupRows();
+  }
+
+  function updateSetupRows() {
+    const n = parseInt(document.getElementById('numPlayersSelect').value);
+    const container = document.getElementById('playerSetupRows');
+    container.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const row = document.createElement('div');
+      row.className = 'setup-row';
+      row.innerHTML = `
+        <span class="setup-label">Player ${i+1}</span>
+        <div class="char-dot" style="background:${PLAYER_COLORS[i]}"></div>
+        <input type="text" id="pname${i}" value="${PLAYER_NAMES[i]}" maxlength="14" placeholder="Name">`;
+      container.appendChild(row);
+    }
+  }
+
+  function selectDiff(btn) {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  let goalRevealQueue = [];
+  let goalRevealIdx = 0;
+
+  function showGoalReveal() {
+    screen('gameScreen'); // game screen is behind
+    goalRevealQueue = Game.state.players.filter(p => !p.goalRevealDone);
+    goalRevealIdx = 0;
+    nextGoalReveal();
+  }
+
+  function nextGoalReveal() {
+    if (goalRevealIdx >= goalRevealQueue.length) {
+      document.getElementById('goalReveal').classList.remove('visible');
+      Game.beginPlaying();
+      return;
+    }
+    const p = goalRevealQueue[goalRevealIdx++];
+    p.goalRevealDone = true;
+
+    document.getElementById('goalRevealPlayer').innerHTML =
+      `<span style="color:${p.color}">${p.emoji} ${p.name}</span>`;
+
+    const cards = document.getElementById('goalRevealCards');
+    cards.innerHTML = '';
+    const goals = [
+      {key:'wealth',    icon:'💰', label:`Wealth: $${p.goals.wealth}`,       desc:'Total money (cash+bank+stocks)'},
+      {key:'happiness', icon:'😊', label:`Happiness: ${p.goals.happiness}%`, desc:'Overall life satisfaction'},
+      {key:'education', icon:'🎓', label:`Education: Lvl ${p.goals.education}`,desc:'Degrees earned'},
+      {key:'career',    icon:'💼', label:`Career: Job ${p.goals.career}`,    desc:'Job tier reached'},
+    ];
+    for (const g of goals) {
+      const c = document.createElement('div');
+      c.className = 'goal-card';
+      c.innerHTML = `<div class="goal-card-icon">${g.icon}</div><div class="goal-card-name">${g.label}</div><div class="goal-card-desc">${g.desc}</div>`;
+      cards.appendChild(c);
+    }
+
+    document.getElementById('goalReveal').classList.add('visible');
+  }
+
+  function showGame() {
+    screen('gameScreen');
+    document.getElementById('goalReveal').classList.remove('visible');
+  }
+
+  function showWin(player) {
+    screen('winScreen');
+    document.getElementById('winName').innerHTML =
+      `<span style="color:${player.color}">${player.emoji} ${player.name}</span> wins!`;
+    document.getElementById('winGoals').innerHTML =
+      `Achieved all goals: Wealth $${player.totalWealth}, Happiness ${player.happiness}%, Education ${player.edu}, Career ${JOBS[player.job].name}`;
+  }
+
+  function renderPlayerCards() {
+    const s = Game.state;
+    if (!s) return;
+    const container = document.getElementById('playerCards');
+    container.innerHTML = '';
+
+    for (const p of s.players) {
+      const isActive = s.players[s.currentPlayerIdx] === p;
+      const card = document.createElement('div');
+      card.className = 'pcard' + (isActive ? ' active-player' : '');
+
+      // Goals pct
+      const gPcts = ['wealth','happiness','education','career'].map(k => ({k, pct:p.goalPct(k)}));
+
+      card.innerHTML = `
+        <div class="pcard-header">
+          <div class="pcard-dot" style="background:${p.color}"></div>
+          <div class="pcard-name">${p.emoji} ${p.name}</div>
+          <div class="pcard-type">${p.isHuman?'Human':'CPU'}</div>
+        </div>
+        <div class="pcard-stats">
+          <div class="pcard-stat"><span>💰 Cash</span><span>$${p.cash}</span></div>
+          <div class="pcard-stat"><span>🏦 Bank</span><span>$${p.bank}</span></div>
+          <div class="pcard-stat"><span>🍽️ Food</span><span>${p.food > 0 ? p.food+'wk' : '⚠️ None!'}</span></div>
+          <div class="pcard-stat"><span>👗 Clothes</span><span>${p.clothing > 0 ? p.clothing+'wk' : '⚠️ Needed!'}</span></div>
+          <div class="pcard-stat"><span>🏠 Housing</span><span>${HOUSING[p.housing].name}</span></div>
+          <div class="pcard-stat"><span>💼 Job</span><span>${JOBS[p.job].emoji} ${JOBS[p.job].name}</span></div>
+          <div class="pcard-stat"><span>🎓 Edu</span><span>Lvl ${p.edu}</span></div>
+          <div class="pcard-stat"><span>😊 Happy</span><span>${p.happiness}%</span></div>
+          <div class="pcard-stat"><span>⚡ EXP/DEP</span><span>${p.exp}/${p.dep}</span></div>
+        </div>
+        <div class="pcard-goals">
+          ${gPcts.map(g => `
+            <div class="pcard-goal ${g.pct>=100?'done':''}">
+              <span class="goal-check">${g.pct>=100?'✅':'⬜'}</span>
+              <span style="flex:1">${GOAL_DEFS[g.k].emoji} ${GOAL_DEFS[g.k].name}</span>
+              <span class="pcard-goal-pct" style="color:${g.pct>=100?'#44ee66':g.pct>=70?'#ffdd6b':g.pct>=40?'#ff8844':'#ff4444'}">${g.pct}%</span>
+            </div>
+            <div class="pcard-bar"><div class="pcard-bar-fill" style="width:${g.pct}%;background:${g.pct>=100?'#44ee66':g.pct>=70?'#ffdd6b':g.pct>=40?'#ff8844':'#ff4444'}"></div></div>
+          `).join('')}
+        </div>
+        ${isActive ? `<div class="pcard-hours" style="margin-top:6px;">
+          ${Array.from({length:12},(_,i)=>`<div class="hours-pip ${i < Math.ceil(p.hours/2)?'':'used'}"></div>`).join('')}
+          <span style="font-size:11px;color:var(--muted);margin-left:4px">${p.hours}h left</span>
+        </div>` : ''}`;
+      container.appendChild(card);
+    }
+  }
+
+  return { showTitle, showHelp, showSetup, updateSetupRows, selectDiff,
+           showGoalReveal, nextGoalReveal, showGame, showWin, renderPlayerCards };
+})();
+
+// ════════════════════════════════════════════════════════
+//  NOTIFICATION TOAST
+// ════════════════════════════════════════════════════════
+function notify(msg) {
+  const n = document.getElementById('notification');
+  n.textContent = msg;
+  n.classList.add('show');
+  clearTimeout(n._t);
+  n._t = setTimeout(() => n.classList.remove('show'), 2800);
+  Sound.notify();
+}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  UI.showTitle();
+  // Preload sounds on first interaction
+  document.addEventListener('click', () => Sound.unlock(), { once: true });
+});
+</script>
+</body>
+</html>
