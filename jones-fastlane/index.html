@@ -608,41 +608,49 @@ const Board = (() => {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // City center decoration
+    // City center park & skyline
     const cx = W/2, cy = H/2 + 10;
+
+    // Faint city block grid
     ctx.save();
-    ctx.globalAlpha = .12;
-    ctx.fillStyle = '#224422';
-    ctx.beginPath(); ctx.arc(cx, cy, 140, 0, Math.PI*2); ctx.fill();
-    ctx.globalAlpha = .07;
-    ctx.fillStyle = '#336633';
-    ctx.beginPath(); ctx.arc(cx, cy, 200, 0, Math.PI*2); ctx.fill();
     ctx.globalAlpha = .05;
-    ctx.fillStyle = '#003333';
-    ctx.beginPath(); ctx.arc(cx, cy, 240, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-
-    // Center grid lines (city block pattern)
-    ctx.save();
-    ctx.globalAlpha = .04;
-    ctx.strokeStyle = '#446644';
+    ctx.strokeStyle = '#334455';
     ctx.lineWidth = 1;
-    for (let gx = 150; gx < W - 100; gx += 60) {
-      ctx.beginPath(); ctx.moveTo(gx, 120); ctx.lineTo(gx, H - 90); ctx.stroke();
-    }
-    for (let gy = 130; gy < H - 80; gy += 60) {
-      ctx.beginPath(); ctx.moveTo(130, gy); ctx.lineTo(W - 110, gy); ctx.stroke();
-    }
+    for (let gx = 140; gx < W - 90; gx += 55) { ctx.beginPath(); ctx.moveTo(gx, 110); ctx.lineTo(gx, H - 80); ctx.stroke(); }
+    for (let gy = 120; gy < H - 70; gy += 55) { ctx.beginPath(); ctx.moveTo(120, gy); ctx.lineTo(W - 100, gy); ctx.stroke(); }
     ctx.restore();
 
-    // Decorative city center emoji
+    // Skyline silhouettes (distant buildings, corners)
+    ctx.save(); ctx.globalAlpha = .07; ctx.fillStyle = '#223355';
+    const sky = [[130,H],[130,H-90],[150,H-90],[150,H-120],[165,H-120],[165,H-80],[185,H-80],[185,H-110],[205,H-110],[205,H-70],[225,H-70],[225,H]];
+    ctx.beginPath(); sky.forEach(([sx,sy],i)=>i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)); ctx.closePath(); ctx.fill();
+    const skyR = [[W-130,H],[W-130,H-100],[W-150,H-100],[W-150,H-130],[W-165,H-130],[W-165,H-85],[W-185,H-85],[W-185,H-115],[W-210,H-115],[W-210,H-75],[W-225,H-75],[W-225,H]];
+    ctx.beginPath(); skyR.forEach(([sx,sy],i)=>i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Central park green zone
     ctx.save();
-    ctx.globalAlpha = .06;
-    ctx.font = '80px system-ui';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🏙️', cx, cy);
+    const parkGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 210);
+    parkGrad.addColorStop(0,   'rgba(20,70,20,0.22)');
+    parkGrad.addColorStop(0.55,'rgba(10,40,10,0.14)');
+    parkGrad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = parkGrad;
+    ctx.beginPath(); ctx.arc(cx, cy, 210, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Park trees (small, scattered in center)
+    ctx.save(); ctx.globalAlpha = .28;
+    [[cx-70,cy-50],[cx+70,cy-50],[cx-80,cy+30],[cx+80,cy+30],[cx,cy-80],[cx-30,cy+70],[cx+30,cy+70]].forEach(([tx,ty])=>{
+      ctx.fillStyle='#1a5c1a'; ctx.beginPath(); ctx.arc(tx,ty,14,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#22772a'; ctx.beginPath(); ctx.arc(tx-4,ty-4,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#2a8a30'; ctx.beginPath(); ctx.arc(tx+3,ty-6,8,0,Math.PI*2); ctx.fill();
+    });
+    // Fountain
+    ctx.fillStyle='#0d2a44'; ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#1a4488'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#1a3a60'; ctx.beginPath(); ctx.arc(cx,cy,14,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(80,160,255,0.4)'; ctx.lineWidth=1;
+    for(let a=0;a<6;a++){const ra=a*Math.PI/3; ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ra)*12,cy+Math.sin(ra)*12);ctx.stroke();}
     ctx.restore();
 
     // Road outline (shadow)
@@ -747,38 +755,12 @@ const Board = (() => {
     ctx.fill();
     ctx.restore();
 
-    // Building gradient background
-    const grad = ctx.createLinearGradient(bx, by, bx, by + BH);
-    grad.addColorStop(0, lighten(loc.color, .25));
-    grad.addColorStop(.4, loc.color);
-    grad.addColorStop(1, darken(loc.color, .55));
-    ctx.fillStyle = grad;
+    // Custom building sprite (clipped to rounded-rect shape)
+    ctx.save();
     roundRect(bx, by, BW, BH, R);
-    ctx.fill();
-
-    // Roof accent (top stripe with rounded top corners only)
-    const roofGrad = ctx.createLinearGradient(bx, by, bx, by + 18);
-    roofGrad.addColorStop(0, lighten(loc.color, .5));
-    roofGrad.addColorStop(1, lighten(loc.color, .2));
-    ctx.fillStyle = roofGrad;
-    ctx.beginPath();
-    ctx.moveTo(bx + R, by);
-    ctx.lineTo(bx + BW - R, by);
-    ctx.arcTo(bx + BW, by, bx + BW, by + R, R);
-    ctx.lineTo(bx + BW, by + 18);
-    ctx.lineTo(bx, by + 18);
-    ctx.lineTo(bx, by + R);
-    ctx.arcTo(bx, by, bx + R, by, R);
-    ctx.closePath();
-    ctx.fill();
-
-    // Window details
-    ctx.fillStyle = 'rgba(255,255,200,0.25)';
-    for (let wx = 0; wx < 3; wx++) {
-      for (let wy = 0; wy < 2; wy++) {
-        ctx.fillRect(bx + 8 + wx * 20, by + 26 + wy * 16, 10, 8);
-      }
-    }
+    ctx.clip();
+    drawBuildingDetails(loc, bx, by, BW, BH);
+    ctx.restore();
 
     // Border
     ctx.strokeStyle = isHover ? '#ffffff' : isReach ? '#44ff88' : lighten(loc.color, .4);
@@ -832,6 +814,221 @@ const Board = (() => {
     }
   }
 
+  function drawBuildingDetails(loc, bx, by, BW, BH) {
+    const p = (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(bx+x, by+y, w, h); };
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    switch (loc.id) {
+      case 'employment': { // FastLane Agency – sleek corporate glass tower
+        p(0,0,BW,BH,'#0d1a4a');
+        p(0,0,4,BH,'#1a2888'); p(BW-4,0,4,BH,'#1a2888'); // side strips
+        for (let r=0;r<5;r++) for (let c=0;c<4;c++) { // window grid
+          p(c*16+4, r*10+22, 12, 8, (r===1&&c===1)||(r===3&&c===2) ? '#1a2455' : '#5588dd');
+        }
+        p(22,BH-24,28,24,'#060d2a'); // lobby
+        p(26,BH-22,10,22,'#1a2a6c'); p(38,BH-22,10,22,'#1a2a6c'); // door panes
+        p(35,BH-22,2,22,'#060d2a'); // gap
+        p(0,0,BW,16,'#1a2a66'); // sign strip
+        ctx.fillStyle='#88aaff'; ctx.font='bold 8px monospace'; ctx.fillText('AGENCY',bx+BW/2,by+8);
+        ctx.fillStyle='rgba(180,200,255,0.05)'; ctx.fillRect(bx+4,by,6,BH); ctx.fillRect(bx+34,by,6,BH);
+        break;
+      }
+      case 'university': { // Pixel University – classical tan brick
+        p(0,0,BW,BH,'#c49a45');
+        for (let r=0;r<8;r++) { const off=r%2?8:0; for (let c=-1;c<5;c++) p(c*18+off,22+r*8,16,6,'#a07828'); }
+        p(4,18,10,BH-18,'#f0e8d0'); p(8,18,2,BH-18,'rgba(0,0,0,.18)'); // left column
+        p(BW-14,18,10,BH-18,'#f0e8d0'); p(BW-10,18,2,BH-18,'rgba(0,0,0,.18)'); // right column
+        ctx.fillStyle='#e0d0a0'; ctx.beginPath(); ctx.moveTo(bx+BW/2,by+2); ctx.lineTo(bx+BW-4,by+18); ctx.lineTo(bx+4,by+18); ctx.closePath(); ctx.fill(); // pediment
+        ctx.fillStyle='#4a2e10'; ctx.beginPath(); ctx.arc(bx+BW/2,by+BH-28,13,Math.PI,0); ctx.fill();
+        p(BW/2-13,BH-28,26,28,'#4a2e10'); p(BW/2-9,BH-26,18,22,'#2a1a08'); // arch door
+        p(6,BH-4,BW-12,4,'#d4c08a'); p(10,BH-8,BW-20,4,'#d4c08a'); // steps
+        break;
+      }
+      case 'tradeschool': { // Trade School – industrial rust
+        p(0,0,BW,BH,'#7a2c18');
+        for (let r=0;r<12;r++) p(0,r*5+20,BW,2,r%2?'rgba(0,0,0,.25)':'rgba(255,255,255,.07)'); // corrugated
+        p(BW/2-13,BH-30,26,30,'#222'); // door
+        p(BW/2-11,BH-28,10,13,'#333'); p(BW/2+1,BH-28,10,13,'#333');
+        p(BW/2-11,BH-14,10,12,'#333'); p(BW/2+1,BH-14,10,12,'#333'); // door panels
+        for (let c=0;c<6;c++) p(c*12,BH-6,6,6,c%2?'#ffcc00':'#111'); // warning stripe
+        ctx.strokeStyle='#ffaa00'; ctx.lineWidth=3; // wrench
+        ctx.beginPath(); ctx.arc(bx+18,by+46,6,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx+24,by+46); ctx.lineTo(bx+42,by+52); ctx.stroke();
+        ctx.beginPath(); ctx.arc(bx+45,by+54,5,0,Math.PI*2); ctx.stroke();
+        ctx.strokeStyle='#cc8800'; ctx.lineWidth=2; // gear
+        ctx.beginPath(); ctx.arc(bx+56,by+44,7,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(bx+56,by+44,3,0,Math.PI*2); ctx.stroke();
+        ctx.lineWidth=1;
+        p(0,0,BW,16,'#990000');
+        ctx.fillStyle='#ffcc00'; ctx.font='bold 8px monospace'; ctx.fillText('TRADES',bx+BW/2,by+8);
+        break;
+      }
+      case 'grocery': { // Fresh Mart – vibrant green
+        p(0,0,BW,BH,'#1a5a20');
+        for (let c=0;c<6;c++) p(c*12,20,12,14,c%2?'#2db83d':'#ddffdd'); // awning
+        p(0,20,BW,2,'#145a18'); p(0,33,BW,2,'#145a18');
+        p(4,36,26,28,'#ccffcc'); p(42,36,26,28,'#ccffcc'); // windows
+        const prod=['#ff2222','#ff8800','#ffdd00','#44bb44','#ff55aa'];
+        prod.forEach((c,i)=>{ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(bx+10+i*4,by+44,3,0,Math.PI*2); ctx.fill(); });
+        prod.forEach((c,i)=>{ ctx.fillStyle=prod[(i+2)%5]; ctx.beginPath(); ctx.arc(bx+10+i*4,by+52,3,0,Math.PI*2); ctx.fill(); });
+        prod.forEach((c,i)=>{ ctx.fillStyle=prod[(i+1)%5]; ctx.beginPath(); ctx.arc(bx+46+i*4,by+44,3,0,Math.PI*2); ctx.fill(); });
+        p(BW/2-9,BH-24,18,24,'#0a3010'); p(BW/2-7,BH-22,14,20,'#114a18'); // door
+        p(0,0,BW,16,'#1a7a28');
+        ctx.fillStyle='#ffffff'; ctx.font='bold 8px monospace'; ctx.fillText('FRESH',bx+BW/2,by+8);
+        break;
+      }
+      case 'clothing': { // Style Squad – fashion pink boutique
+        p(0,0,BW,BH,'#6a1040');
+        for (let c=0;c<6;c++) p(c*12,20,12,13,c%2?'#ff44aa':'#ffffff'); // striped awning
+        p(0,20,BW,2,'#440822'); p(0,32,BW,2,'#440822');
+        p(8,34,BW-16,30,'#ffe0f0'); // display window
+        ctx.fillStyle='#cc1166'; // mannequin
+        ctx.beginPath(); ctx.arc(bx+BW/2,by+42,5,0,Math.PI*2); ctx.fill();
+        p(BW/2-4,46,8,10,'#cc1166');
+        ctx.beginPath(); ctx.moveTo(bx+BW/2-7,by+54); ctx.lineTo(bx+BW/2+7,by+54); ctx.lineTo(bx+BW/2,by+65); ctx.closePath(); ctx.fill();
+        ['#ffdd00','#ff88cc','#ffffff'].forEach((c,i)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(bx+18,by+48+i*5,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx+54,by+50+i*4,2,0,Math.PI*2);ctx.fill();});
+        p(BW/2-8,BH-22,16,22,'#330015'); // door
+        p(0,0,BW,16,'#990055');
+        ctx.fillStyle='#ffddee'; ctx.font='bold 8px monospace'; ctx.fillText('STYLE',bx+BW/2,by+8);
+        break;
+      }
+      case 'bank': { // Pixel Bank – classical marble columns
+        p(0,0,BW,BH,'#1a1055');
+        for (let r=0;r<4;r++) p(0,r*8+40,BW,1,'rgba(200,200,255,0.07)');
+        for (let c=0;c<3;c++) { // columns
+          const cx2=c*22+8;
+          p(cx2,18,8,BH-24,'#e8e0d0'); p(cx2+2,18,2,BH-24,'rgba(0,0,0,.12)');
+          p(cx2,14,8,6,'#f8f0e0'); p(cx2,BH-8,8,8,'#d8d0c0');
+        }
+        ctx.fillStyle='#d8d0c0'; ctx.beginPath(); ctx.moveTo(bx+4,by+18); ctx.lineTo(bx+BW-4,by+18); ctx.lineTo(bx+BW/2,by+4); ctx.closePath(); ctx.fill();
+        p(4,BH-4,BW-8,4,'#d8d0c0'); p(8,BH-8,BW-16,4,'#c8c0b0'); p(12,BH-12,BW-24,4,'#c8c0b0'); // steps
+        p(24,BH-28,24,28,'#0d0833'); p(28,BH-24,7,20,'#1a1466'); p(37,BH-24,7,20,'#1a1466'); // door
+        ctx.fillStyle='#ffdd44'; ctx.font='bold 14px monospace'; ctx.fillText('$',bx+BW/2,by+38);
+        break;
+      }
+      case 'rentoffice': { // City Rentals – professional gray
+        p(0,0,BW,BH,'#3a3a55');
+        for (let r=0;r<3;r++) for (let c=0;c<3;c++) p(c*22+5,r*13+22,16,10,(r+c)%2?'#667799':'#8899bb');
+        p(4,22,BW-8,16,'#222233');
+        ctx.fillStyle='#ffdd44'; ctx.font='bold 7px monospace'; ctx.fillText('FOR RENT',bx+BW/2,by+31);
+        ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2; // key
+        ctx.beginPath(); ctx.arc(bx+20,by+58,6,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx+26,by+58); ctx.lineTo(bx+42,by+58); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx+40,by+58); ctx.lineTo(bx+40,by+62); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx+37,by+58); ctx.lineTo(bx+37,by+61); ctx.stroke();
+        ctx.lineWidth=1;
+        p(BW/2-8,BH-22,16,22,'#222233'); // door
+        p(0,0,BW,16,'#333355');
+        ctx.fillStyle='#aabbcc'; ctx.font='bold 6px monospace'; ctx.fillText('RENTALS',bx+BW/2,by+8);
+        break;
+      }
+      case 'grindpad': { // The Grind Pad – rundown apartment
+        p(0,0,BW,BH,'#4a4030');
+        for (let r=0;r<9;r++) { const off=r%2?8:0; for (let c=-1;c<5;c++) p(c*18+off,22+r*7,15,5,r%3?'#3a3020':'#443828'); }
+        p(4,22,16,12,'#111008'); p(40,22,16,12,'#111008'); // barred windows
+        p(4,42,16,12,'#111008'); p(40,42,16,12,'#111008');
+        ctx.strokeStyle='#333'; ctx.lineWidth=1;
+        [[4,22],[40,22],[4,42]].forEach(([wx,wy])=>{ for(let b=0;b<3;b++){ctx.beginPath();ctx.moveTo(bx+wx+b*5+1,by+wy);ctx.lineTo(bx+wx+b*5+1,by+wy+12);ctx.stroke();} });
+        ctx.strokeStyle='#666'; ctx.lineWidth=2; // fire escape
+        ctx.beginPath(); ctx.moveTo(bx+61,by+22); ctx.lineTo(bx+70,by+30); ctx.lineTo(bx+61,by+30); ctx.lineTo(bx+70,by+46); ctx.lineTo(bx+61,by+46); ctx.lineTo(bx+70,by+62); ctx.stroke();
+        ctx.lineWidth=1;
+        ctx.strokeStyle='rgba(0,0,0,.5)'; ctx.beginPath(); ctx.moveTo(bx+28,by+34); ctx.lineTo(bx+34,by+42); ctx.lineTo(bx+30,by+52); ctx.stroke(); // crack
+        ['#ff4444','#4488ff','#ffcc44'].forEach((c,i)=>{ p(i*8+4,36,6,8,c); p(i*8+4,36,6,2,'rgba(0,0,0,.4)'); }); // laundry
+        p(20,BH-24,14,24,'#1a1408'); // door
+        p(0,0,BW,16,'#2a2418');
+        ctx.fillStyle='#888870'; ctx.font='bold 6px monospace'; ctx.fillText('GRIND PAD',bx+BW/2,by+8);
+        break;
+      }
+      case 'urbanheights': { // Urban Heights – modern glass apartment
+        p(0,0,BW,BH,'#0d2240');
+        for (let r=0;r<6;r++) for (let c=0;c<4;c++) {
+          p(c*17+3,r*11+18,15,9,r%2?'#1a4488':'#1a3a77');
+          p(c*17+3,r*11+18,15,2,'rgba(160,210,255,0.12)'); // reflection
+        }
+        ctx.strokeStyle='#3a6aaa'; ctx.lineWidth=1;
+        for (let r=1;r<6;r++) { ctx.beginPath(); ctx.moveTo(bx+3,by+r*11+22); ctx.lineTo(bx+BW-3,by+r*11+22); ctx.stroke(); } // balconies
+        ctx.strokeStyle='#0a1830'; ctx.lineWidth=2;
+        for (let r=1;r<6;r++) { ctx.beginPath(); ctx.moveTo(bx,by+r*11+18); ctx.lineTo(bx+BW,by+r*11+18); ctx.stroke(); } // floors
+        ctx.lineWidth=1;
+        p(16,BH-22,40,22,'#061220'); p(20,BH-20,16,20,'#0d2a55'); p(38,BH-20,14,20,'#0d2a55'); // lobby
+        p(18,BH-20,36,3,'rgba(100,160,255,0.3)'); // lobby light
+        p(0,0,BW,16,'#0a1a3a');
+        ctx.fillStyle='#66aaff'; ctx.font='bold 6px monospace'; ctx.fillText('HEIGHTS',bx+BW/2,by+8);
+        break;
+      }
+      case 'fastfood': { // Burger Bonanza – classic fast food
+        p(0,0,BW,BH,'#cc1100');
+        p(0,0,BW,18,'#dd1100'); // top
+        p(0,18,BW,18,'#ffcc00'); // yellow stripe
+        ctx.fillStyle='#ff8800'; // golden arches
+        ctx.beginPath(); ctx.arc(bx+BW/2-10,by+36,11,Math.PI,0); ctx.fill();
+        ctx.beginPath(); ctx.arc(bx+BW/2+10,by+36,11,Math.PI,0); ctx.fill();
+        p(BW/2-21,18,42,16,'#ffcc00'); // arch base
+        p(4,42,64,22,'#ffeeaa'); // counter window
+        ctx.fillStyle='#8B4513'; ctx.beginPath(); ctx.arc(bx+20,by+50,7,0,Math.PI*2); ctx.fill(); // bun top
+        p(13,50,14,4,'#228B22'); // lettuce
+        ctx.fillStyle='#8B4513'; ctx.beginPath(); ctx.arc(bx+20,by+56,8,Math.PI,0); ctx.fill(); // bun bottom
+        for (let f=0;f<5;f++) p(38+f*5,44,3,9,'#ffaa00'); // fries
+        p(36,52,22,6,'#cc2200');
+        p(BW/2-10,BH-22,20,22,'#880000'); p(BW/2-8,BH-20,8,20,'#aa0000'); p(BW/2,BH-20,8,20,'#aa0000'); p(BW/2-1,BH-20,2,20,'#660000'); // door
+        p(0,0,BW,16,'#dd0000');
+        ctx.fillStyle='#ffee00'; ctx.font='bold 8px monospace'; ctx.fillText('BURGERS',bx+BW/2,by+8);
+        break;
+      }
+      case 'park': { // City Park – nature
+        const skyG = ctx.createLinearGradient(bx,by,bx,by+35);
+        skyG.addColorStop(0,'#0a1a33'); skyG.addColorStop(1,'#1a3a55');
+        ctx.fillStyle=skyG; ctx.fillRect(bx,by,BW,35);
+        p(0,35,BW,BH-35,'#1a5520'); p(0,50,BW,30,'#2a7a2a'); // ground
+        ctx.fillStyle='#aaa07a'; ctx.beginPath(); // path
+        ctx.moveTo(bx+BW/2-7,by+BH); ctx.lineTo(bx+BW/2+7,by+BH); ctx.lineTo(bx+BW/2+3,by+50); ctx.lineTo(bx+BW/2-3,by+50); ctx.closePath(); ctx.fill();
+        p(8,34,7,18,'#6b4010'); p(BW-15,34,7,18,'#6b4010'); // gate posts
+        p(10,30,3,6,'#886020'); p(BW-13,30,3,6,'#886020');
+        ctx.strokeStyle='#774400'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(bx+15,by+38); ctx.lineTo(bx+BW-15,by+38); ctx.stroke(); ctx.lineWidth=1;
+        [[14,24],[BW/2,20],[BW-16,24]].forEach(([tx,ty])=>{ // trees
+          p(tx-2,ty+16,4,14,'#5a3008');
+          ctx.fillStyle='#187a18'; ctx.beginPath(); ctx.arc(bx+tx,by+ty+8,12,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#229922'; ctx.beginPath(); ctx.arc(bx+tx-3,by+ty+4,9,0,Math.PI*2); ctx.fill();
+          ctx.fillStyle='#2abb2a'; ctx.beginPath(); ctx.arc(bx+tx+2,by+ty+2,8,0,Math.PI*2); ctx.fill();
+        });
+        ['#ff4466','#ffdd22','#ff8833','#ff44cc'].forEach((c,i)=>{ p(i*16+4,62,4,4,c); }); // flowers
+        ctx.fillStyle='rgba(255,255,255,0.5)';
+        [[8,8],[20,4],[50,10],[62,6],[40,14]].forEach(([sx,sy])=>{ ctx.fillRect(bx+sx,by+sy,2,2); }); // stars
+        break;
+      }
+      case 'lucky': { // Lucky Corner – neon fortune
+        p(0,0,BW,BH,'#120025');
+        p(4,20,BW-8,30,'#1e0040'); // neon sign panel
+        ctx.strokeStyle='#cc00ff'; ctx.lineWidth=2;
+        ctx.shadowColor='#cc00ff'; ctx.shadowBlur=6;
+        ctx.strokeRect(bx+4,by+20,BW-8,30);
+        ctx.fillStyle='#ff55ff'; ctx.shadowColor='#ff00ff'; ctx.shadowBlur=8;
+        ctx.font='bold 11px monospace'; ctx.fillText('LUCKY',bx+BW/2,by+36);
+        ctx.shadowBlur=0;
+        ctx.fillStyle='#ffdd00'; ctx.font='9px monospace';
+        [[8,54],[22,58],[38,54],[52,58],[62,54],[16,46],[50,46]].forEach(([sx,sy])=>{ ctx.fillText('★',bx+sx,by+sy); });
+        p(6,58,14,14,'rgba(200,200,255,0.9)'); p(BW-20,58,14,14,'rgba(200,200,255,0.9)'); // dice
+        ctx.fillStyle='#120025';
+        [[9,61],[14,65],[18,69]].forEach(([dx,dy])=>{ ctx.beginPath(); ctx.arc(bx+dx,by+dy,1.5,0,Math.PI*2); ctx.fill(); });
+        [[BW-14,62],[BW-11,66],[BW-14,70],[BW-8,62],[BW-8,70]].forEach(([dx,dy])=>{ ctx.beginPath(); ctx.arc(bx+dx,by+dy,1.5,0,Math.PI*2); ctx.fill(); });
+        p(22,BH-22,28,22,'#0a001a'); p(26,BH-20,10,20,'#1e0040'); p(38,BH-20,10,20,'#1e0040'); // entrance
+        p(0,0,BW,16,'#1a0035');
+        ctx.fillStyle='#dd44ff'; ctx.shadowColor='#ff00ff'; ctx.shadowBlur=4;
+        ctx.font='bold 7px monospace'; ctx.fillText('LUCKY',bx+BW/2,by+8);
+        ctx.shadowBlur=0;
+        break;
+      }
+      default: { // fallback
+        const grad = ctx.createLinearGradient(bx,by,bx,by+BH);
+        grad.addColorStop(0,lighten(loc.color,.25)); grad.addColorStop(.4,loc.color); grad.addColorStop(1,darken(loc.color,.55));
+        ctx.fillStyle=grad; ctx.fillRect(bx,by,BW,BH);
+        p(0,0,BW,16,lighten(loc.color,.3));
+        ctx.fillStyle='rgba(255,255,200,0.25)';
+        for(let wx=0;wx<3;wx++) for(let wy=0;wy<2;wy++) p(wx*20+8,wy*16+26,10,8,'rgba(255,255,200,0.25)');
+      }
+    }
+  }
+
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -847,27 +1044,50 @@ const Board = (() => {
   }
 
   function drawPlayerToken(x, y, color, label) {
-    const R = 12;
-    // Shadow
     ctx.save();
-    ctx.globalAlpha = .5;
-    ctx.fillStyle = '#000';
-    ctx.beginPath(); ctx.arc(x+2, y+2, R, 0, Math.PI*2); ctx.fill();
+    // Drop shadow (ellipse under feet)
+    ctx.globalAlpha = .35; ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x+1, y+17, 10, 4, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const dk = darken(color, .35);
+
+    // Legs
+    ctx.fillStyle = dk; ctx.fillRect(x-5, y+6, 5, 9); ctx.fillRect(x+1, y+6, 5, 9);
+    // Shoes
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x-6, y+14, 6, 3); ctx.fillRect(x+1, y+14, 6, 3);
+
+    // Body (shirt in player color)
+    ctx.fillStyle = color; ctx.fillRect(x-7, y-5, 14, 12);
+    // Arms
+    ctx.fillStyle = color; ctx.fillRect(x-11, y-4, 4, 9); ctx.fillRect(x+7, y-4, 4, 9);
+    // Hands
+    ctx.fillStyle = '#f5c28a'; ctx.beginPath(); ctx.arc(x-9, y+5, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+9, y+5, 3, 0, Math.PI*2); ctx.fill();
+
+    // Head
+    ctx.fillStyle = '#f5c28a'; ctx.beginPath(); ctx.arc(x, y-12, 9, 0, Math.PI*2); ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#222'; ctx.fillRect(x-4, y-15, 3, 3); ctx.fillRect(x+1, y-15, 3, 3);
+    ctx.fillStyle = '#fff'; ctx.fillRect(x-4, y-15, 1, 1); ctx.fillRect(x+1, y-15, 1, 1);
+    // Smile
+    ctx.strokeStyle = '#a0604a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y-10, 3, 0.2, Math.PI - 0.2); ctx.stroke();
+    // Hair (colored to match player)
+    ctx.fillStyle = dk;
+    ctx.fillRect(x-9, y-21, 18, 10); // hair block
+    ctx.fillRect(x-10, y-17, 2, 7); ctx.fillRect(x+8, y-17, 2, 7); // sides
+    // Head outline
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y-12, 9, 0, Math.PI*2); ctx.stroke();
+
+    // Initial on shirt
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label[0], x, y+1);
+
+    ctx.lineWidth = 1;
     ctx.restore();
-
-    // Body
-    ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Label
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 11px system-ui';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, x, y);
   }
 
   function lighten(hex, amt) {
